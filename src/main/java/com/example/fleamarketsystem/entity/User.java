@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -34,7 +33,7 @@ public class User {
 	private String password;
 
 	@Column(nullable = false)
-	private String role; // "USER" or "ADMIN"
+	private String role = "USER"; // "USER" or "ADMIN"
 
 	@Column(name = "line_notify_token")
 	private String lineNotifyToken;
