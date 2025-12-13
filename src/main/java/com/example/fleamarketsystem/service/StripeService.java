@@ -1,13 +1,14 @@
 package com.example.fleamarketsystem.service;
 
+import java.math.BigDecimal;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
 
 @Service
 public class StripeService {
@@ -18,7 +19,7 @@ public class StripeService {
 
     public PaymentIntent createPaymentIntent(BigDecimal amount, String currency, String description) throws StripeException {
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                .setAmount(amount.multiply(new BigDecimal(100)).longValue()) // Amount in cents
+                .setAmount(amount.multiply(new BigDecimal(1)).longValue()) // Amount in cents
                 .setCurrency(currency)
                 .setDescription(description)
                 .setAutomaticPaymentMethods(

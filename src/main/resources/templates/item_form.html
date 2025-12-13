@@ -43,5 +43,46 @@
             </div>
         </form>
     </div>
+	<script>
+	    // フォームを取得
+	    const form = document.querySelector('form');
+
+	    form.addEventListener('submit', function(event) {
+	        // 価格入力欄を取得
+	        const priceInput = document.getElementById('price');
+	        const price = parseInt(priceInput.value, 10);  // 整数として取得
+
+	        // エラーメッセージを表示する場所（価格のすぐ下に追加）
+	        let errorSpan = document.getElementById('price-error');
+	        if (!errorSpan) {
+	            errorSpan = document.createElement('span');
+	            errorSpan.id = 'price-error';
+	            errorSpan.style.color = 'red';
+	            errorSpan.style.fontSize = '0.9em';
+	            errorSpan.style.display = 'block';
+	            errorSpan.style.marginTop = '5px';
+	            priceInput.parentNode.appendChild(errorSpan);  // priceのpタグ内に追加
+	        }
+
+	        // 既存のエラーをクリア
+	        errorSpan.textContent = '';
+
+	        // バリデーション
+	        if (isNaN(price)) {
+	            errorSpan.textContent = '????';
+	            event.preventDefault();  // 送信停止
+	            return;
+	        }
+
+	        if (price < 50) {
+	            errorSpan.textContent = '50円からね';
+	            event.preventDefault();  // 送信停止
+	            priceInput.focus();      // フォーカスを戻す
+	            return;
+	        }
+
+	        // 50円以上ならそのまま送信（何もしない）
+	    });
+	</script>
 </body>
 </html>
