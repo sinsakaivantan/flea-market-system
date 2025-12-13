@@ -21,9 +21,14 @@
     </div>
 
     <script th:inline="javascript">
-        const stripePublicKey = [[${stripePublicKey}]];
+		/*<![CDATA[*/
+		const stripePublicKey = /*[[${stripePublicKey}]]*/ "";
+		    const clientSecret = /*[[${clientSecret}]]*/ "";
+		    const itemId = /*[[${itemId}]]*/ 0;
+        /*const stripePublicKey = [[${stripePublicKey}]];
         const clientSecret = [[${clientSecret}]];
         const itemId = [[${itemId}]];
+		*/
 
         const stripe = Stripe(stripePublicKey);
         const elements = stripe.elements({ clientSecret });
