@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -18,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.fleamarketsystem.service.AppOrderService;
 import com.example.fleamarketsystem.service.ItemService;
+import com.example.fleamarketsystem.service.RenrakuService;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 @RequestMapping("/admin")
@@ -26,16 +27,24 @@ public class AdminController {
 
 	private final ItemService itemService;
 	private final AppOrderService appOrderService;
-
-	public AdminController(ItemService itemService, AppOrderService appOrderService) {
+	private final RenrakuService renrakuService;
+	
+	public AdminController(ItemService itemService, AppOrderService appOrderService, RenrakuService renrakuService) {
 		this.itemService = itemService;
 		this.appOrderService = appOrderService;
+		this.renrakuService = renrakuService;
 	}
 
 	@GetMapping("/items")
 	public String manageItems(Model model) {
 		model.addAttribute("items", itemService.getAllItems());
 		return "admin_items";
+	}
+	
+	@GetMapping("/renraku")
+	public String renraku(Model model) {
+		model.addAttribute("admin", renrakuService.getAllAdmin());
+		return "renraku";
 	}
 
 	@PostMapping("/items/{id}/delete")
