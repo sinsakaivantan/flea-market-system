@@ -32,6 +32,8 @@ import com.example.fleamarketsystem.service.UserService;
 @RequestMapping("/items")
 public class ItemController {
 
+	private static final java.math.BigDecimal MAX_PRICE = new java.math.BigDecimal("99999999.99");
+
 	private final ItemService itemService;
 	private final CategoryService categoryService;
 	private final UserService userService;
@@ -57,6 +59,14 @@ public class ItemController {
 			@RequestParam(value = "size", defaultValue = "10") int size,
 			Model model) {
 		Page<Item> items = itemService.searchItems(keyword, categoryId, page, size);
+		
+		// ページ番号が範囲外の場合は0ページにリダイレクト
+		if (items.getTotalPages() > 0 && page >= items.getTotalPages()) {
+			return "redirect:/items?page=0" + 
+					(keyword != null ? "&keyword=" + keyword : "") +
+					(categoryId != null ? "&categoryId=" + categoryId : "");
+		}
+		
 		List<Category> categories = categoryService.getAllCategories();
 
 		model.addAttribute("items", items);
@@ -103,6 +113,11 @@ public class ItemController {
 			@RequestParam(value = "image", required = false) MultipartFile imageFile,
 			RedirectAttributes redirectAttributes) {
 
+		if (price.compareTo(java.math.BigDecimal.ZERO) <= 0 || price.compareTo(MAX_PRICE) > 0) {
+			redirectAttributes.addFlashAttribute("errorMessage", "価格は0より大きく、99,999,999.99以下にしてください。");
+			return "redirect:/items/new";
+		}
+
 		User seller = userService.getUserByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new RuntimeException("Seller not found"));
 		Category category = categoryService.getCategoryById(categoryId)
@@ -147,6 +162,11 @@ public class ItemController {
 			@RequestParam("categoryId") Long categoryId,
 			@RequestParam(value = "image", required = false) MultipartFile imageFile,
 			RedirectAttributes redirectAttributes) {
+
+		if (price.compareTo(java.math.BigDecimal.ZERO) <= 0 || price.compareTo(MAX_PRICE) > 0) {
+			redirectAttributes.addFlashAttribute("errorMessage", "価格は0より大きく、99,999,999.99以下にしてください。");
+			return "redirect:/items/{id}/edit";
+		}
 
 		Item existingItem = itemService.getItemById(id)
 				.orElseThrow(() -> new RuntimeException("Item not found"));

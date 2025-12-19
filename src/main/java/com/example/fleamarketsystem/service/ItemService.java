@@ -14,6 +14,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class ItemService {
 
@@ -52,8 +55,11 @@ public class ItemService {
         if (imageFile != null && !imageFile.isEmpty()) {
             String imageUrl = cloudinaryService.uploadFile(imageFile);
             item.setImageUrl(imageUrl);
+            log.info("商品に画像URLを設定しました: itemId={}, imageUrl={}", item.getId(), imageUrl);
         }
-        return itemRepository.save(item);
+        Item savedItem = itemRepository.save(item);
+        log.info("商品を保存しました: itemId={}, imageUrl={}", savedItem.getId(), savedItem.getImageUrl());
+        return savedItem;
     }
 
     public void deleteItem(Long id) {

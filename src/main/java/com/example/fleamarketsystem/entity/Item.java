@@ -35,6 +35,7 @@ public class Item {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @Column(name = "status")
     private String status = "出品中"; // default status
 
     // For image URLs (Cloudinary)

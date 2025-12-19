@@ -36,7 +36,7 @@ public class AppOrderService {
     }
 
     @Transactional
-    public PaymentIntent initiatePurchase(Long itemId, User buyer) throws StripeException {
+    public PaymentIntent initiatePurchase(Long itemId, User buyer) throws StripeException, RuntimeException {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new IllegalArgumentException("Item not found"));
 
@@ -44,16 +44,42 @@ public class AppOrderService {
             throw new IllegalStateException("Item is not available for purchase.");
         }
 
+        // ダミー設定の場合はStripeをスキップして直接注文を作成
+        if (stripeService.isDummyConfig()) {
+            AppOrder appOrder = new AppOrder();
+            appOrder.setItem(item);
+            appOrder.setBuyer(buyer);
+            appOrder.setPrice(item.getPrice());
+            appOrder.setStatus("購入済"); // ダミー設定の場合は直接「購入済」にする
+            appOrder.setCreatedAt(LocalDateTime.now());
+            appOrderRepository.save(appOrder);
+            
+            // 商品を売却済みにマーク
+            itemService.markItemAsSold(itemId);
+            
+            // LINE通知を送信
+            if (item.getSeller().getLineNotifyToken() != null) {
+                String message = String.format("\n商品が購入されました！\n商品名: %s\n購入者: %s\n価格: ¥%s",
+                        item.getName(),
+                        buyer.getName(),
+                        item.getPrice());
+                lineNotifyService.sendMessage(item.getSeller().getLineNotifyToken(), message);
+            }
+            
+            // 決済を伴わないため PaymentIntent は不要
+            return null;
+        }
+
         // Create a PaymentIntent with Stripe
         PaymentIntent paymentIntent = stripeService.createPaymentIntent(item.getPrice(), "jpy", "購入: " + item.getName());
 
-        // Save a pending order (or create it after successful payment confirmation)
-        // For simplicity, we'll create the order here and update its status later
+        // Save a pending order with PaymentIntent ID
         AppOrder appOrder = new AppOrder();
         appOrder.setItem(item);
         appOrder.setBuyer(buyer);
         appOrder.setPrice(item.getPrice());
         appOrder.setStatus("決済待ち"); // New status for pending payment
+        appOrder.setPaymentIntentId(paymentIntent.getId()); // Store PaymentIntent ID
         appOrder.setCreatedAt(LocalDateTime.now()); // Set creation time
         appOrderRepository.save(appOrder);
 
@@ -65,12 +91,9 @@ public class AppOrderService {
         PaymentIntent paymentIntent = stripeService.retrievePaymentIntent(paymentIntentId);
 
         if ("succeeded".equals(paymentIntent.getStatus())) {
-            // Find the order associated with this payment intent (you might need to store paymentIntentId in AppOrder entity)
-            // For now, let's assume we find the latest pending order for simplicity
-            AppOrder appOrder = appOrderRepository.findAll().stream()
-                    .filter(o -> "決済待ち".equals(o.getStatus()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("No pending order found for this payment."));
+            // Find the order associated with this payment intent using paymentIntentId
+            AppOrder appOrder = appOrderRepository.findByPaymentIntentId(paymentIntentId)
+                    .orElseThrow(() -> new IllegalStateException("No order found for payment intent: " + paymentIntentId));
 
             appOrder.setStatus("購入済");
             itemService.markItemAsSold(appOrder.getItem().getId());

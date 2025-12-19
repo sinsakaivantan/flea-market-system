@@ -47,11 +47,37 @@ public class AppOrderController {
                 .orElseThrow(() -> new RuntimeException("Buyer not found"));
         try {
             PaymentIntent paymentIntent = appOrderService.initiatePurchase(itemId, buyer);
+            // ダミー設定時はpaymentIntentがnullで返る
+            if (paymentIntent == null) {
+                redirectAttributes.addFlashAttribute("successMessage", "商品を購入しました！（ダミー設定のため決済はスキップされました）");
+                return "redirect:/my-page/orders";
+            }
+
             redirectAttributes.addFlashAttribute("clientSecret", paymentIntent.getClientSecret());
             redirectAttributes.addFlashAttribute("itemId", itemId);
             return "redirect:/orders/confirm-payment";
-        } catch (IllegalStateException | IllegalArgumentException | StripeException e) {
+        } catch (IllegalStateException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/items/" + itemId; // Redirect back to item detail with error
+        } catch (RuntimeException e) {
+            // StripeServiceから投げられるRuntimeExceptionも処理
+            String errorMessage = "決済処理でエラーが発生しました。";
+            if (e.getMessage() != null && e.getMessage().contains("予期しないエラー")) {
+                errorMessage = "決済処理中に予期しないエラーが発生しました。ネットワーク接続を確認してください。";
+            }
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/items/" + itemId;
+        } catch (StripeException e) {
+            // Stripe API接続エラーの場合、より分かりやすいメッセージを表示
+            String errorMessage = "決済処理でエラーが発生しました。";
+            if (e.getMessage() != null && e.getMessage().contains("Broken pipe")) {
+                errorMessage = "Stripe APIへの接続に失敗しました。ネットワーク接続を確認するか、しばらく時間をおいて再度お試しください。";
+            } else if (e.getMessage() != null && e.getMessage().contains("Invalid API Key")) {
+                errorMessage = "Stripe APIキーが無効です。環境変数の設定を確認してください。";
+            } else {
+                errorMessage = "決済処理でエラーが発生しました: " + e.getMessage();
+            }
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
             return "redirect:/items/" + itemId; // Redirect back to item detail with error
         }
     }

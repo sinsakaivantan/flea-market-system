@@ -1,9 +1,40 @@
 -- users
-INSERT INTO users (name, email, password, role, enabled)
+INSERT INTO users (name, email, password, role, enabled, banned)
 VALUES
-  ('出品者A', 'sellerA@example.com', '{noop}password', 'USER', TRUE),
-  ('購入者B', 'xyz@example.com', '{noop}password', 'USER', TRUE),
-  ('運営者C', 'adminC@example.com',  '{noop}adminpass','ADMIN',TRUE);
+  ('出品者A', 'sellerA@example.com', '{noop}password', 'USER', TRUE, FALSE)
+ON CONFLICT (email) DO UPDATE SET
+  name = EXCLUDED.name,
+  password = EXCLUDED.password,
+  role = EXCLUDED.role,
+  enabled = EXCLUDED.enabled,
+  banned = EXCLUDED.banned;
+INSERT INTO users (name, email, password, role, enabled, banned)
+VALUES
+  ('購入者B', 'xyz@example.com', '{noop}password', 'USER', TRUE, FALSE)
+ON CONFLICT (email) DO UPDATE SET
+  name = EXCLUDED.name,
+  password = EXCLUDED.password,
+  role = EXCLUDED.role,
+  enabled = EXCLUDED.enabled,
+  banned = EXCLUDED.banned;
+INSERT INTO users (name, email, password, role, enabled, banned)
+VALUES
+  ('購入者D', 'buyerd@example.com', '{noop}password', 'USER', TRUE, FALSE)
+ON CONFLICT (email) DO UPDATE SET
+  name = EXCLUDED.name,
+  password = EXCLUDED.password,
+  role = EXCLUDED.role,
+  enabled = EXCLUDED.enabled,
+  banned = EXCLUDED.banned;
+INSERT INTO users (name, email, password, role, enabled, banned)
+VALUES
+  ('運営者C', 'adminC@example.com', '{noop}adminpass', 'ADMIN', TRUE, FALSE)
+ON CONFLICT (email) DO UPDATE SET
+  name = EXCLUDED.name,
+  password = EXCLUDED.password,
+  role = EXCLUDED.role,
+  enabled = EXCLUDED.enabled,
+  banned = EXCLUDED.banned;
 
 -- category
 INSERT INTO category (name) VALUES

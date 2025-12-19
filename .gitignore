@@ -1,0 +1,71 @@
+# Maven
+/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# IDE - Eclipse
+.classpath
+.project
+.settings/
+.metadata/
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.loadpath
+.recommenders
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# IDE - VS Code
+.vscode/
+
+# Log files
+*.log
+app.log
+logs/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Local development files
+# ローカルに保存された画像（開発用）
+src/main/resources/static/images/*.png
+src/main/resources/static/images/*.jpg
+src/main/resources/static/images/*.jpeg
+src/main/resources/static/images/*.gif
+src/main/resources/static/images/*.JPG
+src/main/resources/static/images/*.PNG
+src/main/resources/static/images/*.JPEG
+src/main/resources/static/images/*.GIF
+# ただし、placeholder.pngなどは含める
+!src/main/resources/static/images/placeholder.png
+
+# PDF files (教材など)
+*.pdf
+
+# Environment variables (if any)
+.env
+.env.local
+.env.*.local
+
+# Application specific
+# 注意: application.propertiesはダミー値のみなので含めますが、
+# 実際のAPIキーが含まれている場合は除外してください

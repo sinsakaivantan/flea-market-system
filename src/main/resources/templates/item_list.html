@@ -47,7 +47,7 @@
             </div>
         </div>
 
-        <div class="pagination">
+        <div class="pagination" th:if="${items.totalPages > 0}">
             <a th:if="${items.hasPrevious()}" th:href="@{/items(page=${items.number - 1}, keyword=${param.keyword}, categoryId=${param.categoryId})}">前へ</a>
             <span th:each="i : ${#numbers.sequence(0, items.totalPages - 1)}">
                 <a th:if="${i != items.number}" th:href="@{/items(page=${i}, keyword=${param.keyword}, categoryId=${param.categoryId})}" th:text="${i + 1}"></a>

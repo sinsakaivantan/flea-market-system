@@ -37,6 +37,7 @@ public class AppOrder {
 	@Column(nullable = false)
 	private BigDecimal price;
 
+	@Column(name = "status")
 	private String status = "購入済"; // default status
 
 	@Column(name = "created_at", nullable = false) // New field

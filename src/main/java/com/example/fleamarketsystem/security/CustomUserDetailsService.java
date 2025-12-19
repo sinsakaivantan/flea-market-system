@@ -14,7 +14,9 @@ import com.example.fleamarketsystem.entity.User;
 import com.example.fleamarketsystem.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -23,15 +25,27 @@ public class CustomUserDetailsService implements UserDetailsService {
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		log.debug("Attempting to load user by username: {}", username);
 		// usernameParameter("email") にしているので username はメール
 		User u = users.findByEmailIgnoreCase(username)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+				.orElseThrow(() -> {
+					log.error("User not found: {}", username);
+					return new UsernameNotFoundException("User not found: " + username);
+				});
 
-		if (!u.isEnabled())
+		log.debug("User found: id={}, email={}, enabled={}, banned={}, role={}", 
+				u.getId(), u.getEmail(), u.isEnabled(), u.isBanned(), u.getRole());
+
+		if (!u.isEnabled()) {
+			log.error("Account disabled for user: {}", username);
 			throw new DisabledException("Account disabled");
-		if (u.isBanned())
+		}
+		if (u.isBanned()) {
+			log.error("Account banned for user: {}", username);
 			throw new DisabledException("Account banned");
+		}
 
+		log.debug("User authenticated successfully: {}", username);
 		return new org.springframework.security.core.userdetails.User(
 				u.getEmail(),
 				u.getPassword(),
