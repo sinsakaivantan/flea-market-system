@@ -15,12 +15,12 @@ public class ChatService {
 
     private final ChatRepository chatRepository;
     private final ItemRepository itemRepository;
-    private final LineNotifyService lineNotifyService;
+    private final EmailService emailService;
 
-    public ChatService(ChatRepository chatRepository, ItemRepository itemRepository, LineNotifyService lineNotifyService) {
+    public ChatService(ChatRepository chatRepository, ItemRepository itemRepository, EmailService emailService) {
         this.chatRepository = chatRepository;
         this.itemRepository = itemRepository;
-        this.lineNotifyService = lineNotifyService;
+        this.emailService = emailService;
     }
 
     public List<Chat> getChatMessagesByItem(Long itemId) {
@@ -41,7 +41,7 @@ public class ChatService {
 
         Chat savedChat = chatRepository.save(chat);
 
-        // Send LINE notification to the other party in the chat
+        // Send email notification to the other party in the chat
         User receiver = null;
         if (item.getSeller().equals(sender)) {
             // If sender is seller, receiver is buyer (if item is sold)
@@ -58,12 +58,13 @@ public class ChatService {
             receiver = item.getSeller();
         }
 
-        if (receiver != null && receiver.getLineNotifyToken() != null) {
-            String notificationMessage = String.format("\n商品「%s」に関する新しいメッセージが届きました！\n送信者: %s\nメッセージ: %s",
+        if (receiver != null && receiver.getEmail() != null && !receiver.getEmail().isEmpty()) {
+            String subject = String.format("商品「%s」に関する新しいメッセージ", item.getName());
+            String notificationMessage = String.format("商品「%s」に関する新しいメッセージが届きました！\n\n送信者: %s\nメッセージ: %s",
                     item.getName(),
                     sender.getName(),
                     message);
-            lineNotifyService.sendMessage(receiver.getLineNotifyToken(), notificationMessage);
+            emailService.sendEmail(receiver.getEmail(), subject, notificationMessage);
         }
 
         return savedChat;

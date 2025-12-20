@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>新規登録</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<main class="container">
+  <h1>新規登録</h1>
+  <form method="post" th:action="@{/register}">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+    <div class="field">
+      <label>名前</label>
+      <input type="text" name="name" required maxlength="50">
+    </div>
+    <div class="field">
+      <label>メールアドレス</label>
+      <input type="email" name="email" required>
+    </div>
+    <div class="field">
+      <label>パスワード</label>
+      <input type="password" name="password" required>
+    </div>
+    <div class="field">
+      <label>パスワード（確認）</label>
+      <input type="password" name="passwordConfirm" required>
+    </div>
+    <button type="submit">登録</button>
+  </form>
+  <div style="margin-top: 20px; text-align: center;">
+    <a th:href="@{/login}" style="display: inline-block; padding: 10px 20px; color: #333; text-decoration: none;">ログインページに戻る</a>
+  </div>
+  <p th:if="${error}" style="color: red;" th:text="${error}"></p>
+  <p th:if="${success}" style="color: green;" th:text="${success}"></p>
+</main>
+</body>
+</html>
+

@@ -32,6 +32,7 @@ import com.example.fleamarketsystem.service.UserService;
 @RequestMapping("/items")
 public class ItemController {
 
+	private static final java.math.BigDecimal MIN_PRICE = new java.math.BigDecimal("50");
 	private static final java.math.BigDecimal MAX_PRICE = new java.math.BigDecimal("99999999.99");
 
 	private final ItemService itemService;
@@ -113,8 +114,8 @@ public class ItemController {
 			@RequestParam(value = "image", required = false) MultipartFile imageFile,
 			RedirectAttributes redirectAttributes) {
 
-		if (price.compareTo(java.math.BigDecimal.ZERO) <= 0 || price.compareTo(MAX_PRICE) > 0) {
-			redirectAttributes.addFlashAttribute("errorMessage", "価格は0より大きく、99,999,999.99以下にしてください。");
+		if (price.compareTo(MIN_PRICE) < 0 || price.compareTo(MAX_PRICE) > 0) {
+			redirectAttributes.addFlashAttribute("errorMessage", "価格は50円以上、99,999,999.99円以下にしてください。");
 			return "redirect:/items/new";
 		}
 
@@ -163,8 +164,8 @@ public class ItemController {
 			@RequestParam(value = "image", required = false) MultipartFile imageFile,
 			RedirectAttributes redirectAttributes) {
 
-		if (price.compareTo(java.math.BigDecimal.ZERO) <= 0 || price.compareTo(MAX_PRICE) > 0) {
-			redirectAttributes.addFlashAttribute("errorMessage", "価格は0より大きく、99,999,999.99以下にしてください。");
+		if (price.compareTo(MIN_PRICE) < 0 || price.compareTo(MAX_PRICE) > 0) {
+			redirectAttributes.addFlashAttribute("errorMessage", "価格は50円以上、99,999,999.99円以下にしてください。");
 			return "redirect:/items/{id}/edit";
 		}
 

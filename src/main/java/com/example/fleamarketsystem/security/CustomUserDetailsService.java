@@ -25,16 +25,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		log.debug("Attempting to load user by username: {}", username);
 		// usernameParameter("email") にしているので username はメール
 		User u = users.findByEmailIgnoreCase(username)
 				.orElseThrow(() -> {
 					log.error("User not found: {}", username);
 					return new UsernameNotFoundException("User not found: " + username);
 				});
-
-		log.debug("User found: id={}, email={}, enabled={}, banned={}, role={}", 
-				u.getId(), u.getEmail(), u.isEnabled(), u.isBanned(), u.getRole());
 
 		if (!u.isEnabled()) {
 			log.error("Account disabled for user: {}", username);
@@ -45,7 +41,6 @@ public class CustomUserDetailsService implements UserDetailsService {
 			throw new DisabledException("Account banned");
 		}
 
-		log.debug("User authenticated successfully: {}", username);
 		return new org.springframework.security.core.userdetails.User(
 				u.getEmail(),
 				u.getPassword(),

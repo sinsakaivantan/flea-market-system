@@ -36,9 +36,6 @@ public class User {
 	@Column(nullable = false)
 	private String role; // "USER" or "ADMIN"
 
-	@Column(name = "line_notify_token")
-	private String lineNotifyToken;
-
 	@Column(nullable = false)
 	private boolean enabled = true;
 

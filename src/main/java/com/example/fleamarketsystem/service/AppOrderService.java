@@ -25,14 +25,14 @@ public class AppOrderService {
     private final ItemRepository itemRepository;
     private final ItemService itemService;
     private final StripeService stripeService;
-    private final LineNotifyService lineNotifyService;
+    private final EmailService emailService;
 
-    public AppOrderService(AppOrderRepository appOrderRepository, ItemRepository itemRepository, ItemService itemService, StripeService stripeService, LineNotifyService lineNotifyService) {
+    public AppOrderService(AppOrderRepository appOrderRepository, ItemRepository itemRepository, ItemService itemService, StripeService stripeService, EmailService emailService) {
         this.appOrderRepository = appOrderRepository;
         this.itemRepository = itemRepository;
         this.itemService = itemService;
         this.stripeService = stripeService;
-        this.lineNotifyService = lineNotifyService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -42,32 +42,6 @@ public class AppOrderService {
 
         if (!"出品中".equals(item.getStatus())) {
             throw new IllegalStateException("Item is not available for purchase.");
-        }
-
-        // ダミー設定の場合はStripeをスキップして直接注文を作成
-        if (stripeService.isDummyConfig()) {
-            AppOrder appOrder = new AppOrder();
-            appOrder.setItem(item);
-            appOrder.setBuyer(buyer);
-            appOrder.setPrice(item.getPrice());
-            appOrder.setStatus("購入済"); // ダミー設定の場合は直接「購入済」にする
-            appOrder.setCreatedAt(LocalDateTime.now());
-            appOrderRepository.save(appOrder);
-            
-            // 商品を売却済みにマーク
-            itemService.markItemAsSold(itemId);
-            
-            // LINE通知を送信
-            if (item.getSeller().getLineNotifyToken() != null) {
-                String message = String.format("\n商品が購入されました！\n商品名: %s\n購入者: %s\n価格: ¥%s",
-                        item.getName(),
-                        buyer.getName(),
-                        item.getPrice());
-                lineNotifyService.sendMessage(item.getSeller().getLineNotifyToken(), message);
-            }
-            
-            // 決済を伴わないため PaymentIntent は不要
-            return null;
         }
 
         // Create a PaymentIntent with Stripe
@@ -99,13 +73,14 @@ public class AppOrderService {
             itemService.markItemAsSold(appOrder.getItem().getId());
             AppOrder savedOrder = appOrderRepository.save(appOrder);
 
-            // Send LINE notification to seller
-            if (savedOrder.getItem().getSeller().getLineNotifyToken() != null) {
-                String message = String.format("\n商品が購入されました！\n商品名: %s\n購入者: %s\n価格: ¥%s",
+            // Send email notification to seller
+            if (savedOrder.getItem().getSeller().getEmail() != null && !savedOrder.getItem().getSeller().getEmail().isEmpty()) {
+                String subject = "商品が購入されました";
+                String message = String.format("商品が購入されました！\n\n商品名: %s\n購入者: %s\n価格: ¥%s",
                         savedOrder.getItem().getName(),
                         savedOrder.getBuyer().getName(),
                         savedOrder.getPrice());
-                lineNotifyService.sendMessage(savedOrder.getItem().getSeller().getLineNotifyToken(), message);
+                emailService.sendEmail(savedOrder.getItem().getSeller().getEmail(), subject, message);
             }
 
             return savedOrder;
@@ -133,12 +108,13 @@ public class AppOrderService {
         appOrder.setStatus("発送済");
         AppOrder savedOrder = appOrderRepository.save(appOrder);
 
-        // Send LINE notification to buyer
-        if (savedOrder.getBuyer().getLineNotifyToken() != null) {
-            String message = String.format("\n購入した商品が発送されました！\n商品名: %s\n出品者: %s",
+        // Send email notification to buyer
+        if (savedOrder.getBuyer().getEmail() != null && !savedOrder.getBuyer().getEmail().isEmpty()) {
+            String subject = "購入した商品が発送されました";
+            String message = String.format("購入した商品が発送されました！\n\n商品名: %s\n出品者: %s",
                     savedOrder.getItem().getName(),
                     savedOrder.getItem().getSeller().getName());
-            lineNotifyService.sendMessage(savedOrder.getBuyer().getLineNotifyToken(), message);
+            emailService.sendEmail(savedOrder.getBuyer().getEmail(), subject, message);
         }
     }
 

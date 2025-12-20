@@ -47,12 +47,6 @@ public class AppOrderController {
                 .orElseThrow(() -> new RuntimeException("Buyer not found"));
         try {
             PaymentIntent paymentIntent = appOrderService.initiatePurchase(itemId, buyer);
-            // ダミー設定時はpaymentIntentがnullで返る
-            if (paymentIntent == null) {
-                redirectAttributes.addFlashAttribute("successMessage", "商品を購入しました！（ダミー設定のため決済はスキップされました）");
-                return "redirect:/my-page/orders";
-            }
-
             redirectAttributes.addFlashAttribute("clientSecret", paymentIntent.getClientSecret());
             redirectAttributes.addFlashAttribute("itemId", itemId);
             return "redirect:/orders/confirm-payment";

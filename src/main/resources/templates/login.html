@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
   <meta charset="UTF-8">
   <title>ログイン</title>
   <link rel="stylesheet" th:href="@{/css/style.css}">
@@ -20,6 +21,9 @@
     </div>
     <button type="submit">ログイン</button>
   </form>
+  <div style="margin-top: 20px; text-align: center;">
+    <a th:href="@{/register}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">新規登録</a>
+  </div>
   <p th:if="${param.error}">ログインに失敗しました。</p>
   <p th:if="${param.logout}">ログアウトしました。</p>
 </main>

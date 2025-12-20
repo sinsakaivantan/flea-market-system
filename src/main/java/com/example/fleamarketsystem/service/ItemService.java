@@ -55,10 +55,8 @@ public class ItemService {
         if (imageFile != null && !imageFile.isEmpty()) {
             String imageUrl = cloudinaryService.uploadFile(imageFile);
             item.setImageUrl(imageUrl);
-            log.info("商品に画像URLを設定しました: itemId={}, imageUrl={}", item.getId(), imageUrl);
         }
         Item savedItem = itemRepository.save(item);
-        log.info("商品を保存しました: itemId={}, imageUrl={}", savedItem.getId(), savedItem.getImageUrl());
         return savedItem;
     }
 
