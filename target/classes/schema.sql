@@ -1,12 +1,16 @@
 -- ========== CLEAN DROP (依存順) ==========
-DROP TABLE IF EXISTS chat CASCADE;
-DROP TABLE IF EXISTS favorite_item CASCADE;
-DROP TABLE IF EXISTS review CASCADE;
-DROP TABLE IF EXISTS app_order CASCADE;
-DROP TABLE IF EXISTS item CASCADE;
-DROP TABLE IF EXISTS category CASCADE;
-DROP TABLE IF EXISTS user_complaint CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+-- 警告: このDROP文は本番環境では実行しないでください！
+-- データベースの全データが削除されます。
+-- 開発時のみ、手動で実行してください。
+-- 
+-- DROP TABLE IF EXISTS chat CASCADE;
+-- DROP TABLE IF EXISTS favorite_item CASCADE;
+-- DROP TABLE IF EXISTS review CASCADE;
+-- DROP TABLE IF EXISTS app_order CASCADE;
+-- DROP TABLE IF EXISTS item CASCADE;
+-- DROP TABLE IF EXISTS category CASCADE;
+-- DROP TABLE IF EXISTS user_complaint CASCADE;
+-- DROP TABLE IF EXISTS users CASCADE;
 
 -- ========== CREATE ==========
 CREATE TABLE users (

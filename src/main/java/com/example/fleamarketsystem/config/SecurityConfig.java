@@ -22,6 +22,7 @@ public class SecurityConfig {
 
 	private final UserDetailsService userDetailsService;
 
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		// {bcrypt},{noop} など委譲エンコーダ
