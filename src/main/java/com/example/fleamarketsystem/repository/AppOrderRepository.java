@@ -1,4 +1,4 @@
-// リポジトリのパッケージ
+// リポジトリのパッケージx
 package com.example.fleamarketsystem.repository;
 
 // コレクションやOptional用
