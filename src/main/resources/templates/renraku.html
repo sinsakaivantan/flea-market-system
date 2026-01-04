@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>aa</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <h1>aaaa</h1>
+        <p>ようこそ、<span sec:authentication="name"></span>さん！ (管理者)</p>
+
+        <div class="main-nav">
+            <form th:action="@{/logout}" method="post" style="display:inline;">
+                <button type="submit" class="button secondary">ログアウト</button>
+            </form>
+        </div>
+
+        <h2>最近の出品</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>対象者</th>
+                    <th>内容</th>
+                    <th>テキスト</th>
+                    <th>時間</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="ad : ${admin}">
+                    <td th:text="${ad.userId.name}"></td>
+                    <td th:text="${ad.action}"></td>
+                    <td th:text="${ad.description}"></td>
+                    <td th:text="${ad.time}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
