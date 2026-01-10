@@ -4,8 +4,81 @@
     <meta charset="UTF-8">
     <title th:text="${item.name} + ' - 商品詳細'"></title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+	<style> 
+		        .overlay {
+		            display: none; /* 最初は非表示 */
+		            position: fixed;
+		            top: 0;
+		            left: 0;
+		            width: 100%;
+		            height: 100%;
+		            background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒背景 */
+		            justify-content: center;
+		            align-items: center;
+		            z-index: 1000;
+		        }
+
+		        /* フォーム本体 */
+		        .form-container {
+		            position: relative;
+		            background: white;
+		            padding: 30px;
+		            border-radius: 10px;
+		            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+		            width: 400px;
+		            max-width: 90%;
+		        }
+
+		        /* 閉じるボタン（左上） */
+		        .close-btn {
+		            position: absolute;
+		            top: 10px;
+		            left: 10px;
+		            background: none;
+		            border: none;
+		            font-size: 28px;
+		            cursor: pointer;
+		            color: #aaa;
+		            width: 30px;
+		            height: 30px;
+		            display: flex;
+		            align-items: center;
+		            justify-content: center;
+		        }
+
+		        .close-btn:hover {
+		            color: #000;
+		        }
+
+		        /* 開くボタン */
+		        .open-btn {
+		            padding: 10px 20px;
+		            font-size: 16px;
+		            background-color: #007bff;
+		            color: white;
+		            border: none;
+		            border-radius: 5px;
+		            cursor: pointer;
+		        }
+
+		        .open-btn:hover {
+		            background-color: #0056b3;
+		        }
+		    </style>
 </head>
 <body>
+	<button class="open-btn" id="openForm">通報</button>
+		<div class="overlay" id="overlay">
+		        <div class="form-container">
+		            <button class="close-btn" id="closeForm">❌</button>
+					<p><span th:text="${item.seller.name}"></span>を通報</p>
+		<form th:action="@{|/report/${item.seller.id}|}" method="post">
+			<label for="description">理由:</label>
+			<textarea id="description" name="description" rows="5"></textarea>
+			<button type="submit" class="button">通報</button>
+		</form>
+		</div>
+		</div>
     <div class="container">
         <h1 th:text="${item.name}"></h1>
 
@@ -61,5 +134,27 @@
             <a th:href="@{/items}" class="button secondary">商品一覧に戻る</a>
         </div>
     </div>
+	<script>
+		        const openBtn = document.getElementById('openForm');
+		        const overlay = document.getElementById('overlay');
+		        const closeBtn = document.getElementById('closeForm');
+
+		        // 開く
+		        openBtn.onclick = function() {
+		            overlay.style.display = 'flex';
+		        };
+
+		        // 閉じる（❌ボタン）
+		        closeBtn.onclick = function() {
+		            overlay.style.display = 'none';
+		        };
+
+		        // オーバーレイの背景クリックでも閉じる（任意で追加）
+		        overlay.onclick = function(e) {
+		            if (e.target === overlay) {
+		                overlay.style.display = 'none';
+		            }
+		        };
+		    </script>
 </body>
 </html>
