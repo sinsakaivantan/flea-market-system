@@ -32,6 +32,11 @@
                     <td th:text="${ad.action}"></td>
                     <td th:text="${ad.description}"></td>
                     <td th:text="${ad.time}"></td>
+					<form th:action="@{|/admin/users/${ad.userId.id}/punish|}" method="post">
+						<label for="description">理由:</label>
+									<textarea id="description" name="description" rows="5"></textarea>
+									<textarea id="a" name="a" rows="5"></textarea>
+									<button type="submit" class="button">通報</button>
                 </tr>
             </tbody>
         </table>

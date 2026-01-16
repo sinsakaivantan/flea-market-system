@@ -30,7 +30,7 @@ public class Ban {
 	
 	private int punish;
 	
-	@Column(name = "end", nullable = false) // New field
+	@Column(name = "endo", nullable = false) // New field
     private LocalDateTime end;
 
 	@Column(columnDefinition = "TEXT")
