@@ -16,8 +16,22 @@
     <p><strong>BAN:</strong> <span th:text="${user.banned}"></span></p>
     <p><strong>平均評価:</strong> <span th:text="${avgRating}"></span></p>
     <p><strong>通報数:</strong> <span th:text="${complaintCount}"></span></p>
+	<p><strong>一時利用停止:</strong> <span th:text="${aaaaa}"></span></p>
   </section>
-
+  <section class="actions">
+  <form th:action="@{|/admin/users/${user.id}/punish|}" method="post">
+  										                    <label for="description">理由:</label>
+															<input type="text" name="description">
+  										                    <select name="a" id="a">
+  										                        <option value="1">軽</option>
+  										                        <option value="2">中</option>
+  										                        <option value="3">重</option>
+  										                        <option value="5">深刻</option>
+  										                        <option value="10">追放</option>
+  										                    </select>
+  										                    <button type="submit" class="button">執行</button>
+  										                </form>
+														</section>
   <section class="actions">
     <div th:if="${!user.banned}">
       <h3>BANする</h3>

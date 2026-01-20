@@ -4,6 +4,7 @@ package com.example.fleamarketsystem.controller;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -69,6 +70,20 @@ public class AdminUserController {
 		User user = service.findUser(id);
 		Double avg = service.averageRating(id);
 		long complaints = service.complaintCount(id);
+		Optional<Ban> banOpt = banRepository.findTopByUserIdOrderByEndDesc(user);
+		if (banOpt.isPresent()) {
+            Ban ban = banOpt.get();
+            LocalDateTime now = LocalDateTime.now();
+
+            if (now.isBefore(ban.getEnd()) || now.isEqual(ban.getEnd())) {
+                LocalDateTime aaaaa = ban.getEnd();
+                model.addAttribute("aaaaa",aaaaa);
+            }else {
+            	model.addAttribute("aaaaa","通常");
+            }
+        }else {
+        	model.addAttribute("aaaaa","通常");
+        }
 		model.addAttribute("user", user);
 		model.addAttribute("avgRating", avg);
 		model.addAttribute("complaintCount", complaints);

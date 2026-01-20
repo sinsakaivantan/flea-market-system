@@ -4,6 +4,67 @@
     <meta charset="UTF-8">
     <title>aa</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+	<style> 
+			        .overlay {
+			            display: none; /* 最初は非表示 */
+			            position: fixed;
+			            top: 0;
+			            left: 0;
+			            width: 100%;
+			            height: 100%;
+			            background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒背景 */
+			            justify-content: center;
+			            align-items: center;
+			            z-index: 1000;
+			        }
+
+			        /* フォーム本体 */
+			        .form-container {
+			            position: relative;
+			            background: white;
+			            padding: 30px;
+			            border-radius: 10px;
+			            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+			            width: 400px;
+			            max-width: 90%;
+			        }
+
+			        /* 閉じるボタン（左上） */
+			        .close-btn {
+			            position: absolute;
+			            top: 10px;
+			            left: 10px;
+			            background: none;
+			            border: none;
+			            font-size: 28px;
+			            cursor: pointer;
+			            color: #aaa;
+			            width: 30px;
+			            height: 30px;
+			            display: flex;
+			            align-items: center;
+			            justify-content: center;
+			        }
+
+			        .close-btn:hover {
+			            color: #000;
+			        }
+
+			        /* 開くボタン */
+			        .open-btn {
+			            padding: 10px 20px;
+			            font-size: 16px;
+			            background-color: #007bff;
+			            color: white;
+			            border: none;
+			            border-radius: 5px;
+			            cursor: pointer;
+			        }
+
+			        .open-btn:hover {
+			            background-color: #0056b3;
+			        }
+			    </style>
 </head>
 <body>
     <div class="container">
@@ -24,6 +85,7 @@
                     <th>内容</th>
                     <th>テキスト</th>
                     <th>時間</th>
+					<th>行動</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,14 +94,52 @@
                     <td th:text="${ad.action}"></td>
                     <td th:text="${ad.description}"></td>
                     <td th:text="${ad.time}"></td>
-					<form th:action="@{|/admin/users/${ad.userId.id}/punish|}" method="post">
-						<label for="description">理由:</label>
-									<textarea id="description" name="description" rows="5"></textarea>
-									<textarea id="a" name="a" rows="5"></textarea>
-									<button type="submit" class="button">通報</button>
+					<td>
+						<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+						        <form th:action="@{|/admin/${ad.id}/sikibetu|}" method="post" class="sikibetu-form">
+									<button type="submit" class="button sikibetu-btn" 
+									            th:attr="data-current=${ad.sikibetu}"  
+									            th:style="'background-color: ' + ${ad.sikibetu == 1 ? '#dc3545' : '#28a745'}">
+									        <span th:text="${ad.sikibetu == 1 ? '確認済み' : '未確認'}"></span>
+									    </button>
+						        </form>
+					</td>
                 </tr>
             </tbody>
         </table>
     </div>
+	<script>
+		$(document).ready(function() {
+		    $('.sikibetu-form').on('submit', function(e) {
+		        e.preventDefault();
+		        
+		        var $form = $(this);
+		        var $btn = $form.find('.sikibetu-btn');  // ボタン要素
+		        
+		        $.ajax({
+		            url: $form.attr('action'),
+		            type: 'POST',
+		            data: $form.serialize(),
+		            success: function(response) {
+		                if (response.success) {
+		                    var newValue = response.newSikibetu;
+		                    
+		                    // ボタンの色とテキストを更新
+		                    if (newValue === 1) {
+		                        $btn.css('background-color', '#dc3545');  // 緑
+		                        $btn.find('span').text('確認済み');
+		                    } else {
+		                        $btn.css('background-color', '#28a745');  // 赤
+		                        $btn.find('span').text('未確認');
+		                    }
+		                    
+		                    // data属性も更新（次回用）
+		                    $btn.attr('data-current', newValue);		                    
+		                } 
+		            },
+		        });
+		    });
+		});
+			    </script>
 </body>
 </html>

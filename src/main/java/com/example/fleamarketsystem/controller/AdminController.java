@@ -3,6 +3,8 @@ package com.example.fleamarketsystem.controller;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,7 +15,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.example.fleamarketsystem.entity.Admin;
+import com.example.fleamarketsystem.repository.AdminRepository;
 import com.example.fleamarketsystem.service.AppOrderService;
 import com.example.fleamarketsystem.service.ItemService;
 import com.example.fleamarketsystem.service.RenrakuService;
@@ -25,14 +30,17 @@ import jakarta.servlet.http.HttpServletResponse;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
+    private final AdminRepository adminRepository;
+
 	private final ItemService itemService;
 	private final AppOrderService appOrderService;
 	private final RenrakuService renrakuService;
 
-	public AdminController(ItemService itemService, AppOrderService appOrderService,RenrakuService renrakuService) {
+	public AdminController(ItemService itemService, AppOrderService appOrderService,RenrakuService renrakuService, AdminRepository adminRepository) {
 		this.itemService = itemService;
 		this.appOrderService = appOrderService;
 		this.renrakuService = renrakuService;
+		this.adminRepository = adminRepository;
 	}
 
 	@GetMapping("/items")
@@ -45,6 +53,23 @@ public class AdminController {
 	public String renraku(Model model) {
 		model.addAttribute("admin", renrakuService.getAllAdmin());
 		return "renraku";
+	}
+	
+	@PostMapping("/{ad}/sikibetu")
+	@ResponseBody  // ← これ超重要！ ThymeleafビューじゃなくJSONやテキストを返す
+	public Map<String, Object> sikibetu(@PathVariable("ad") Admin aiu) {
+	    Integer current = aiu.getSikibetu();
+	    int newValue = (current == 0) ? 1 : 0;
+	    
+	    aiu.setSikibetu(newValue);
+	    adminRepository.save(aiu);
+	    
+	    // 成功したら新しい値をクライアントに返す（UI更新に便利）
+	    Map<String, Object> response = new HashMap<>();
+	    response.put("success", true);
+	    response.put("newSikibetu", newValue);
+	    
+	    return response;
 	}
 	
 	@PostMapping("/items/{id}/delete")
