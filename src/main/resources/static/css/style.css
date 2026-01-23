@@ -12,10 +12,14 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    padding: 20px;
+    padding: 0;
     background-color: #eef2f7;
     color: #333;
     line-height: 1.6;
+}
+
+body > .container {
+    padding: 20px;
 }
 /* ナビ */
 .navbar {
@@ -29,6 +33,128 @@ body {
 .nav-links a:hover { text-decoration: underline; }
 .logout-form { margin: 0; }
 
+.global-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 24px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  gap: 20px;
+  height: 64px;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.header-logo-image {
+  width: auto;
+  height: 56px;
+  max-height: calc(100% - 8px);
+  object-fit: contain;
+}
+
+.header-logo-text {
+  color: var(--muted);
+  font-weight: 500;
+  display: inline-block;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.header-admin-button {
+  padding: 8px 16px;
+  background-color: var(--muted);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+}
+
+.header-admin-button:hover {
+  background-color: #4b5563;
+}
+
+.header-user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.header-user-info:hover {
+  background-color: #f3f4f6;
+}
+
+.header-profile-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+.header-username {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-post-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 20px;
+  background-color: var(--primary);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.header-post-button:hover {
+  background-color: #1d4ed8;
+}
+
+.header-plus {
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
 
 .container {
     max-width: 960px;
@@ -37,6 +163,10 @@ body {
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+header ~ .container {
+    margin-top: 94px;
 }
 
 h1,
@@ -416,4 +546,370 @@ tr:hover {
 .filter-form button {
     padding: 10px 20px;
     font-size: 1em;
+}
+
+.profile-image {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--border);
+    display: block;
+}
+
+.profile-image-small {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+    display: block;
+}
+
+.mypage-container {
+    padding-top: 20px;
+}
+
+.mypage-title {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.mypage-header-divider {
+    height: 1px;
+    background-color: #e5e7eb;
+    margin-bottom: 24px;
+}
+
+.mypage-profile-section {
+    display: flex;
+    align-items: center;
+    gap: 60px;
+    margin-bottom: 20px;
+    padding: 0 40px;
+}
+
+.mypage-avatar {
+    flex-shrink: 0;
+}
+
+.mypage-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.mypage-name-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.mypage-username {
+    font-size: 2rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.mypage-gear-button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 2rem;
+    padding: 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    margin-left: auto;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.mypage-gear-button:hover {
+    background-color: #f3f4f6;
+}
+
+.user-detail-follow-button-container {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.follow-button {
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.follow-button:not(.following) {
+    background-color: var(--primary);
+    color: white;
+}
+
+.follow-button:not(.following):hover {
+    background-color: #1d4ed8;
+}
+
+.follow-button.following {
+    background-color: white;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}
+
+.follow-button.following:hover {
+    background-color: #eff6ff;
+}
+
+.mypage-gear-icon {
+    color: #9ca3af;
+}
+
+.mypage-rating-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #f59e0b;
+}
+
+.star-icon {
+    font-size: 1.1rem;
+}
+
+.star-full {
+    color: #f59e0b;
+}
+
+.star-half {
+    color: #f59e0b;
+}
+
+.star-empty {
+    color: #d1d5db;
+}
+
+.mypage-rating-score {
+    margin-left: 8px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.mypage-rating-count {
+    margin-left: 4px;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.mypage-stats-row {
+    display: flex;
+    gap: 40px;
+    margin-top: 10px;
+}
+
+.mypage-stat-item {
+    text-align: center;
+}
+
+.mypage-stat-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.mypage-stat-link:hover {
+    opacity: 0.7;
+}
+
+.mypage-stat-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.mypage-stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.mypage-profile-upload {
+    margin: 20px 0 10px;
+}
+
+.mypage-divider {
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 20px 0;
+}
+
+.mypage-tabs {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+}
+
+.mypage-tab-link {
+    text-decoration: none;
+    color: #111827;
+    font-weight: 500;
+}
+
+.mypage-tab-link:hover {
+    color: #2563eb;
+}
+
+.mypage-section-title {
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.mypage-bottom-nav {
+    margin-top: 20px;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+}
+
+.settings-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+    color: #2c3e50;
+    border-bottom: none;
+    text-align: left;
+    padding-bottom: 0;
+    margin-top: 0;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.settings-icon-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.settings-image-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.settings-name-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.header-follow-link {
+    padding: 8px 16px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+.header-follow-link:hover {
+    background-color: #f3f4f6;
+}
+
+.follow-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.follow-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    justify-content: space-between;
+}
+
+.follow-item-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.follow-item-button-container {
+    flex-shrink: 0;
+}
+
+.follow-username {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.user-follow-list-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    min-width: 0;
+}
+
+.user-follow-list-title {
+    font-size: 2.2rem;
+    margin: 0;
+    text-align: left;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.user-follow-list-username {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.user-follow-list-suffix {
+    flex-shrink: 0;
+    white-space: nowrap;
 }

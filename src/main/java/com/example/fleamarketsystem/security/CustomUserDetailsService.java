@@ -33,11 +33,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 				});
 
 		if (!u.isEnabled()) {
-			log.error("Account disabled for user: {}", username);
+			log.warn("Account disabled for user: {}", username);
 			throw new DisabledException("Account disabled");
 		}
 		if (u.isBanned()) {
-			log.error("Account banned for user: {}", username);
+			log.warn("Account banned for user: {}", username);
 			throw new DisabledException("Account banned");
 		}
 

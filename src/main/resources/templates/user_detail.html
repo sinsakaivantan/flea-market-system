@@ -2,15 +2,12 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>マイページ - フリマアプリ</title>
+    <title th:text="${user.name + ' - フリマアプリ'}">ユーザー詳細 - フリマアプリ</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
     <header th:insert="~{fragments/layout :: header}"></header>
     <div class="container mypage-container">
-        <h1 class="mypage-title">マイページ</h1>
-        <div class="mypage-header-divider"></div>
-
         <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}"></div>
         <div th:if="${successMessage}" class="success-message" th:text="${successMessage}"></div>
 
@@ -23,9 +20,18 @@
             <div class="mypage-info">
                 <div class="mypage-name-row">
                     <div class="mypage-username" th:text="${user.name}"></div>
-                    <a th:href="@{/my-page/settings}" class="mypage-gear-button">
-                        <span class="mypage-gear-icon">⚙</span>
-                    </a>
+                    <div class="user-detail-follow-button-container" sec:authorize="isAuthenticated()" th:if="${isOwnPage == null or !isOwnPage}">
+                        <form th:if="${isFollowing != null and isFollowing}" 
+                              th:action="@{/follow/{userId}/unfollow(userId=${user.id}, returnTo='user')}" 
+                              method="post" style="display:inline;">
+                            <button type="submit" class="follow-button following">フォロー中</button>
+                        </form>
+                        <form th:if="${isFollowing == null or !isFollowing}" 
+                              th:action="@{/follow/{userId}(userId=${user.id}, returnTo='user')}" 
+                              method="post" style="display:inline;">
+                            <button type="submit" class="follow-button">&nbsp; フォロー &nbsp;</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="mypage-rating-row">
                     <div class="mypage-stars" th:if="${reviewCount > 0}">
@@ -46,27 +52,17 @@
                         <div class="mypage-stat-label">出品数</div>
                         <div class="mypage-stat-value" th:text="${itemCount}"></div>
                     </div>
-                    <a th:href="@{/followlist}" class="mypage-stat-item mypage-stat-link">
+                    <a th:href="@{/users/{id}/followlist(id=${user.id})}" class="mypage-stat-item mypage-stat-link">
                         <div class="mypage-stat-label">フォロー数</div>
                         <div class="mypage-stat-value" th:text="${followingCount}"></div>
                     </a>
-                    <a th:href="@{/followers}" class="mypage-stat-item mypage-stat-link">
+                    <a th:href="@{/users/{id}/followers(id=${user.id})}" class="mypage-stat-item mypage-stat-link">
                         <div class="mypage-stat-label">フォロワー数</div>
                         <div class="mypage-stat-value" th:text="${followerCount}"></div>
                     </a>
                 </div>
             </div>
         </div>
-
-        <div class="mypage-divider"></div>
-
-        <div class="mypage-tabs">
-            <a th:href="@{/my-page/selling}" class="mypage-tab-link">出品管理</a>
-            <a th:href="@{/my-page/sales}" class="mypage-tab-link">販売管理</a>
-            <a th:href="@{/my-page/favorites}" class="mypage-tab-link">お気に入り</a>
-        </div>
-
-        <div class="mypage-divider"></div>
 
         <h2 class="mypage-section-title">出品した商品</h2>
         <div class="item-grid">
@@ -82,21 +78,6 @@
                 <p>出品中の商品はありません。</p>
             </div>
         </div>
-
-        <div class="mypage-divider"></div>
-
-        <div class="main-nav mypage-bottom-nav">
-            <a th:href="@{/my-page/selling}" class="button">出品管理</a>
-            <a th:href="@{/my-page/orders}" class="button">購入履歴</a>
-            <a th:href="@{/my-page/sales}" class="button">販売履歴</a>
-            <a th:href="@{/my-page/favorites}" class="button">お気に入り</a>
-            <a th:href="@{/my-page/reviews}" class="button">自分の評価</a>
-            <a th:href="@{/items}" class="button secondary">商品一覧に戻る</a>
-            <form th:action="@{/logout}" method="post" style="display:inline;">
-                <button type="submit" class="button danger">ログアウト</button>
-            </form>
-        </div>
-
     </div>
 </body>
 </html>

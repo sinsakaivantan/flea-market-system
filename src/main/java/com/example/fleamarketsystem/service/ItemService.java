@@ -77,6 +77,14 @@ public class ItemService {
         return itemRepository.findBySeller(seller);
     }
 
+    public List<Item> getActiveItemsBySeller(User seller) {
+        return itemRepository.findBySellerAndStatus(seller, "出品中");
+    }
+
+    public long getItemCountBySeller(User seller) {
+        return itemRepository.countBySeller(seller);
+    }
+
     public void markItemAsSold(Long itemId) {
         itemRepository.findById(itemId).ifPresent(item -> {
             item.setStatus("売却済");

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${targetUser.name + 'さんのフォロー - フリマアプリ'}">フォローリスト - フリマアプリ</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <header th:insert="~{fragments/layout :: header}"></header>
+    <div class="container">
+        <div class="user-follow-list-header">
+            <img th:src="${targetUser.profileImageUrl != null ? targetUser.profileImageUrl : '/images/default-user.png'}"
+                 alt="プロフィール画像"
+                 class="profile-image-small">
+            <h1 class="user-follow-list-title">
+                <span class="user-follow-list-username" th:text="${targetUser.name}"></span><span class="user-follow-list-suffix">さんの&nbsp;フォロー&nbsp;</span>
+            </h1>
+        </div>
+        <div class="mypage-header-divider"></div>
+
+        <div class="follow-list">
+            <div class="follow-item" th:each="user : ${followingUsers}">
+                <a th:href="@{/users/{id}(id=${user.id})}" class="follow-item-link">
+                    <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : '/images/default-user.png'}"
+                         alt="プロフィール画像"
+                         class="profile-image-small">
+                    <span class="follow-username" th:text="${user.name}"></span>
+                </a>
+                <div class="follow-item-button-container" sec:authorize="isAuthenticated()" th:if="${currentUser != null and currentUser.id != user.id}">
+                    <form th:if="${followingStatusMap != null and followingStatusMap.containsKey(user.id) and followingStatusMap.get(user.id)}" 
+                          th:action="@{/follow/{userId}/unfollow(userId=${user.id}, returnTo='user-followlist-' + ${targetUser.id})}" 
+                          method="post" style="display:inline;">
+                        <button type="submit" class="follow-button following">フォロー中</button>
+                    </form>
+                    <form th:if="${followingStatusMap == null or !followingStatusMap.containsKey(user.id) or !followingStatusMap.get(user.id)}" 
+                          th:action="@{/follow/{userId}(userId=${user.id}, returnTo='user-followlist-' + ${targetUser.id})}" 
+                          method="post" style="display:inline;">
+                        <button type="submit" class="follow-button">&nbsp; フォロー &nbsp;</button>
+                    </form>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(followingUsers)}">
+                <p>フォローしているユーザーはいません。</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

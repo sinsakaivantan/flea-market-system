@@ -24,8 +24,9 @@ import com.example.fleamarketsystem.entity.User;
 import com.example.fleamarketsystem.service.CategoryService;
 import com.example.fleamarketsystem.service.ChatService;
 import com.example.fleamarketsystem.service.FavoriteService;
+import com.example.fleamarketsystem.service.FollowService;
 import com.example.fleamarketsystem.service.ItemService;
-import com.example.fleamarketsystem.service.ReviewService; // Add this import
+import com.example.fleamarketsystem.service.ReviewService;
 import com.example.fleamarketsystem.service.UserService;
 
 @Controller
@@ -40,16 +41,19 @@ public class ItemController {
 	private final UserService userService;
 	private final ChatService chatService;
 	private final FavoriteService favoriteService;
-	private final ReviewService reviewService; // Declare ReviewService
+	private final ReviewService reviewService;
+	private final FollowService followService;
 
 	public ItemController(ItemService itemService, CategoryService categoryService, UserService userService,
-			ChatService chatService, FavoriteService favoriteService, ReviewService reviewService) {
+			ChatService chatService, FavoriteService favoriteService, ReviewService reviewService,
+			FollowService followService) {
 		this.itemService = itemService;
 		this.categoryService = categoryService;
 		this.userService = userService;
 		this.chatService = chatService;
 		this.favoriteService = favoriteService;
-		this.reviewService = reviewService; // Initialize ReviewService
+		this.reviewService = reviewService;
+		this.followService = followService;
 	}
 
 	@GetMapping
@@ -58,10 +62,10 @@ public class ItemController {
 			@RequestParam(value = "categoryId", required = false) Long categoryId,
 			@RequestParam(value = "page", defaultValue = "0") int page,
 			@RequestParam(value = "size", defaultValue = "10") int size,
+			@AuthenticationPrincipal UserDetails userDetails,
 			Model model) {
 		Page<Item> items = itemService.searchItems(keyword, categoryId, page, size);
 		
-		// ページ番号が範囲外の場合は0ページにリダイレクト
 		if (items.getTotalPages() > 0 && page >= items.getTotalPages()) {
 			return "redirect:/items?page=0" + 
 					(keyword != null ? "&keyword=" + keyword : "") +
@@ -69,6 +73,12 @@ public class ItemController {
 		}
 		
 		List<Category> categories = categoryService.getAllCategories();
+
+		if (userDetails != null) {
+			User currentUser = userService.getUserByEmail(userDetails.getUsername())
+					.orElseThrow(() -> new RuntimeException("User not found"));
+			model.addAttribute("currentUser", currentUser);
+		}
 
 		model.addAttribute("items", items);
 		model.addAttribute("categories", categories);
@@ -93,6 +103,10 @@ public class ItemController {
 			User currentUser = userService.getUserByEmail(userDetails.getUsername())
 					.orElseThrow(() -> new RuntimeException("User not found"));
 			model.addAttribute("isFavorited", favoriteService.isFavorited(currentUser, id));
+			if (!item.get().getSeller().getId().equals(currentUser.getId())) {
+				model.addAttribute("isFollowing",
+						followService.isFollowing(currentUser, item.get().getSeller()));
+			}
 		}
 		return "item_detail";
 	}

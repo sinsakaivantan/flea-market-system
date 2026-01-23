@@ -67,7 +67,7 @@
 		    </style>
 </head>
 <body>
-	<button class="open-btn" id="openForm">通報</button>
+	<header th:insert="~{fragments/layout :: header}"></header>
 		<div class="overlay" id="overlay">
 		        <div class="form-container">
 		            <button class="close-btn" id="closeForm">❌</button>
@@ -86,13 +86,34 @@
         <div th:if="${successMessage}" class="success-message" th:text="${successMessage}"></div>
 
         <div class="item-detail">
-            <img th:src="${item.imageUrl != null ? item.imageUrl : '/images/placeholder.png'}" alt="商品画像" class="item-image">
+            <img th:src="${item.imageUrl != null ? item.imageUrl : '/images/noimage.png'}" alt="商品画像" class="item-image">
             <p class="price">価格: <span th:text="'¥' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}"></span></p>
             <p>説明: <span th:text="${item.description}"></span></p>
             <p>カテゴリ: <span th:text="${item.category != null ? item.category.name : '未分類'}"></span></p>
-            <p>出品者: <span th:text="${item.seller.name}"></span>
-                <span th:if="${sellerAverageRating}">(平均評価: <span th:text="${sellerAverageRating}"></span>)</span>
-            </p>
+            <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                <a th:href="@{/users/{id}(id=${item.seller.id})}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit;">
+                    <img th:src="${item.seller.profileImageUrl != null ? item.seller.profileImageUrl : '/images/default-user.png'}" 
+                         alt="出品者画像" 
+                         class="profile-image-small">
+                    <div>
+                        <p style="margin: 0;">出品者: <span th:text="${item.seller.name}"></span>
+                            <span th:if="${sellerAverageRating}">(平均評価: <span th:text="${sellerAverageRating}"></span>)</span>
+                        </p>
+                    </div>
+                </a>
+            </div>
+            <div sec:authorize="isAuthenticated()" th:if="${isFollowing != null}" style="margin: 10px 0;">
+                <form th:if="${isFollowing}" 
+                      th:action="@{/follow/{userId}/unfollow(userId=${item.seller.id}, itemId=${item.id})}" 
+                      method="post" style="display:inline;">
+                    <button type="submit" class="button danger">フォロー解除</button>
+                </form>
+                <form th:unless="${isFollowing}" 
+                      th:action="@{/follow/{userId}(userId=${item.seller.id}, itemId=${item.id})}" 
+                      method="post" style="display:inline;">
+                    <button type="submit" class="button">フォロー</button>
+                </form>
+            </div>
             <p>ステータス: <span th:text="${item.status}"></span></p>
 
             <div class="button-group">
@@ -109,6 +130,9 @@
                     <form th:unless="${isFavorited}" th:action="@{/items/{id}/favorite(id=${item.id})}" method="post" style="display:inline;">
                         <button type="submit" class="button">お気に入りに追加</button>
                     </form>
+                </div>
+                <div sec:authorize="isAuthenticated()" th:if="${item.seller.email != #authentication.name}">
+                    <button class="open-btn" id="openForm">通報</button>
                 </div>
             </div>
         </div>

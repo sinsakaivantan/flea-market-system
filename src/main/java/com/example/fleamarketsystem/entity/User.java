@@ -50,4 +50,7 @@ public class User {
 
 	@Column(name = "banned_by_admin_id")
 	private Integer bannedByAdminId;
+
+	@Column(name = "profile_image_url")
+	private String profileImageUrl;
 }

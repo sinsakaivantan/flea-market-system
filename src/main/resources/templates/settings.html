@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>設定 - フリマアプリ</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <header th:insert="~{fragments/layout :: header}"></header>
+    <div class="container">
+        <h1>設定</h1>
+        <div class="mypage-header-divider"></div>
+
+        <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}"></div>
+        <div th:if="${successMessage}" class="success-message" th:text="${successMessage}"></div>
+
+        <form th:action="@{/my-page/settings/update}" method="post" enctype="multipart/form-data" class="settings-form">
+            <div class="settings-section">
+                <h2>アイコン</h2>
+                <div class="settings-icon-section">
+                    <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : '/images/default-user.png'}"
+                         alt="プロフィール画像"
+                         class="profile-image">
+                    <input type="file" name="image" accept="image/*" class="settings-image-input">
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h2>ユーザーネーム</h2>
+                <input type="text" name="name" th:value="${user.name}" required maxlength="50" class="settings-name-input">
+                <small style="display: block; margin-top: 4px; color: #6b7280; font-size: 0.875rem;">名前が長すぎると短縮されて表示される場合があります。</small>
+            </div>
+
+            <div class="button-group" style="margin-top: 20px;">
+                <button type="submit" class="button">更新する</button>
+            </div>
+        </form>
+
+        <div class="button-group" style="margin-top: 30px;">
+            <a th:href="@{/my-page}" class="button secondary">マイページへ戻る</a>
+        </div>
+    </div>
+</body>
+</html>
