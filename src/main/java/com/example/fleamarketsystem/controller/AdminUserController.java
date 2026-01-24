@@ -20,6 +20,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.fleamarketsystem.entity.Ban;
 import com.example.fleamarketsystem.entity.User;
+import com.example.fleamarketsystem.repository.AdminRepository;
 import com.example.fleamarketsystem.repository.BanRepository;
 import com.example.fleamarketsystem.repository.UserRepository;
 import com.example.fleamarketsystem.service.AdminUserService;
@@ -32,8 +33,10 @@ public class AdminUserController {
 	private final AdminUserService service;
 	private final UserRepository users;
 	private final BanRepository banRepository;
-	public AdminUserController(AdminUserService service, UserRepository users, BanRepository banRepository) {
+	private final AdminRepository adminRepository;
+	public AdminUserController(AdminUserService service, UserRepository users, BanRepository banRepository,AdminRepository adminRepository) {
 		this.service = service;
+		this.adminRepository = adminRepository;
 		this.users = users;
 		this.banRepository = banRepository;
 	}
@@ -70,6 +73,7 @@ public class AdminUserController {
 		User user = service.findUser(id);
 		Double avg = service.averageRating(id);
 		long complaints = service.complaintCount(id);
+		List<Ban> aiueo = banRepository.findAllByUserId(user);
 		Optional<Ban> banOpt = banRepository.findTopByUserIdOrderByEndDesc(user);
 		if (banOpt.isPresent()) {
             Ban ban = banOpt.get();
@@ -84,6 +88,7 @@ public class AdminUserController {
         }else {
         	model.addAttribute("aaaaa","通常");
         }
+		model.addAttribute("rireki", aiueo);
 		model.addAttribute("user", user);
 		model.addAttribute("avgRating", avg);
 		model.addAttribute("complaintCount", complaints);
@@ -131,7 +136,7 @@ public class AdminUserController {
 			kkk.setPunish(damage);
 			banRepository.save(kkk);
 		}
-		return "redirect:/admin/renraku";
+		return "redirect:/admin/users/"+id;
 	}
 
 	@PostMapping("/{id}/unban")
