@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <title>aa</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+	<style> 
+		.sikibetu-btn {
+		    min-width: 110px;          
+		    padding: 12px 10px;        
+		    box-sizing: border-box;
+		    white-space: nowrap;       
+		    text-align: center;
+		}
+			    </style>
 </head>
 <body>
     <div class="container">
@@ -24,6 +33,7 @@
                     <th>内容</th>
                     <th>テキスト</th>
                     <th>時間</th>
+					<th>行動</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,9 +42,52 @@
                     <td th:text="${ad.action}"></td>
                     <td th:text="${ad.description}"></td>
                     <td th:text="${ad.time}"></td>
+					<td>
+						<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+						        <form th:action="@{|/admin/${ad.id}/sikibetu|}" method="post" class="sikibetu-form">
+									<button type="submit" class="button sikibetu-btn" 
+									            th:attr="data-current=${ad.sikibetu}"  
+									            th:style="'background-color: ' + ${ad.sikibetu == 1 ? '#dc3545' : '#28a745'}">
+									        <span th:text="${ad.sikibetu == 1 ? '確認済み' : '未確認'}"></span>
+									    </button>
+						        </form>
+					</td>
                 </tr>
             </tbody>
         </table>
     </div>
+	<script>
+		$(document).ready(function() {
+		    $('.sikibetu-form').on('submit', function(e) {
+		        e.preventDefault();
+		        
+		        var $form = $(this);
+		        var $btn = $form.find('.sikibetu-btn');  // ボタン要素
+		        
+		        $.ajax({
+		            url: $form.attr('action'),
+		            type: 'POST',
+		            data: $form.serialize(),
+		            success: function(response) {
+		                if (response.success) {
+		                    var newValue = response.newSikibetu;
+		                    
+		                    // ボタンの色とテキストを更新
+		                    if (newValue === 1) {
+		                        $btn.css('background-color', '#dc3545');  // 緑
+		                        $btn.find('span').text('確認済み');
+		                    } else {
+		                        $btn.css('background-color', '#28a745');  // 赤
+		                        $btn.find('span').text('未確認');
+		                    }
+		                    
+		                    // data属性も更新（次回用）
+		                    $btn.attr('data-current', newValue);		                    
+		                } 
+		            },
+		        });
+		    });
+		});
+			    </script>
 </body>
 </html>

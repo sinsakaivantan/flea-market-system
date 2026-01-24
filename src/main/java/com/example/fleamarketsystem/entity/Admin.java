@@ -38,4 +38,7 @@ public class Admin {
 	@Column(name = "time", nullable = false) 
     private LocalDateTime time = LocalDateTime.now();
 	
+	@Column(nullable = true)
+	private Integer sikibetu = 0;
+	
 }

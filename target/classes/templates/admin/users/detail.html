@@ -1,9 +1,86 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ja">
-<head th:replace="~{fragments/layout :: head('ユーザー詳細')}"></head>
+<head th:replace="~{fragments/layout :: head('ユーザー詳細')}">
+</head>
 <body>
-<header th:insert="~{fragments/layout :: header}"></header>
+	<style> 
+			        .overlay {
+			            display: none; /* 最初は非表示 */
+			            position: fixed;
+			            top: 0;
+			            left: 0;
+			            width: 100%;
+			            height: 100%;
+			            background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒背景 */
+			            justify-content: center;
+			            align-items: center;
+			            z-index: 1000;
+			        }
 
+			        /* フォーム本体 */
+			        .form-container {
+			            position: relative;
+			            background: white;
+			            padding: 30px;
+			            border-radius: 10px;
+			            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+			            width: 400px;
+			            max-width: 90%;
+			        }
+
+			        /* 閉じるボタン（左上） */
+			        .close-btn {
+			            position: absolute;
+			            top: 10px;
+			            left: 10px;
+			            background: none;
+			            border: none;
+			            font-size: 28px;
+			            cursor: pointer;
+			            color: #aaa;
+			            width: 30px;
+			            height: 30px;
+			            display: flex;
+			            align-items: center;
+			            justify-content: center;
+			        }
+
+			        .close-btn:hover {
+			            color: #000;
+			        }
+
+			        /* 開くボタン */
+			        .open-btn {
+			            padding: 10px 20px;
+			            font-size: 16px;
+			            background-color: #007bff;
+			            color: white;
+			            border: none;
+			            border-radius: 5px;
+			            cursor: pointer;
+			        }
+
+			        .open-btn:hover {
+			            background-color: #0056b3;
+			        }
+					.open-btn {
+					    background: none;        /* 背景を消す */
+					    border: none;            /* 枠線を消す */
+					    padding: 0;              /* 余白を消す */
+					    color: #2563eb;          /* style.cssの--primary色（青）に合わせる */
+					    text-decoration: underline; /* 下線を引く */
+					    font-size: 1rem;         /* 周りの文字サイズに合わせる */
+					    cursor: pointer;         /* カーソルを指の形に */
+					    display: inline;         /* テキストとして扱う */
+					}
+
+					.open-btn:hover {
+					    background: none;        /* ホバー時の背景色も無効化 */
+					    color: #0056b3;          /* 少し濃い青に */
+					    text-decoration: none;   /* ホバー時に下線を消す（お好みで） */
+					}
+			    </style>
+<header th:insert="~{fragments/layout :: header}"></header>
 <main class="container">
   <h1>ユーザー詳細</h1>
 
@@ -16,32 +93,98 @@
     <p><strong>BAN:</strong> <span th:text="${user.banned}"></span></p>
     <p><strong>平均評価:</strong> <span th:text="${avgRating}"></span></p>
     <p><strong>通報数:</strong> <span th:text="${complaintCount}"></span></p>
+	<p><strong>一時利用停止:</strong> <span th:text="${aaaaa}"></span></p>
   </section>
-
   <section class="actions">
-    <div th:if="${!user.banned}">
-      <h3>BANする</h3>
-      <form th:action="@{|/admin/users/${user.id}/ban|}" method="post" class="inline-form">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <label>理由</label>
-        <input type="text" name="reason" required>
-        <label class="checkbox">
-          <input type="checkbox" name="disableLogin" checked> ログインも無効化
-        </label>
-        <button type="submit" class="btn-danger">BAN</button>
-      </form>
-    </div>
+      <!-- 開くボタン -->
+      <button type="button" class="open-btn" id="openForm">理由:</button>
 
-    <div th:if="${user.banned}">
-      <h3>UNBAN</h3>
-      <form th:action="@{|/admin/users/${user.id}/unban|}" method="post" class="inline-form">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <button type="submit" class="btn-primary">BAN解除</button>
+      <!-- オーバーレイ（ここで完全に閉じる） -->
+  <!-- ← オーバーレイの閉じタグ（これが超重要） -->
+
+      <!-- ここから下はオーバーレイの外（完全に独立） -->
+      <form th:action="@{|/admin/users/${user.id}/punish|}" method="post" style="margin-top: 20px;">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="text" name="description" placeholder="理由を入力">
+          <select name="a" id="a">
+              <option value="1">軽</option>
+              <option value="2">中</option>
+              <option value="3">重</option>
+              <option value="5">深刻</option>
+              <option value="10">追放</option>
+          </select>
+          <button type="submit" class="button">執行</button>
       </form>
-    </div>
+  </section>  <!-- ← section をここで閉じる -->
+
+  <!-- 次の section（BAN/UNBAN）は完全に別のブロック -->
+  <section class="actions">
+      <div th:if="${!user.banned}">
+          <h3>BANする</h3>
+          <form th:action="@{|/admin/users/${user.id}/ban|}" method="post" class="inline-form">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <label>理由</label>
+              <input type="text" name="reason" required>
+              <label class="checkbox">
+                  <input type="checkbox" name="disableLogin" checked> ログインも無効化
+              </label>
+              <button type="submit" class="btn-danger">BAN</button>
+          </form>
+      </div>
+
+      <div th:if="${user.banned}">
+          <h3>UNBAN</h3>
+          <form th:action="@{|/admin/users/${user.id}/unban|}" method="post" class="inline-form">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="btn-primary">BAN解除</button>
+          </form>
+      </div>
   </section>
-
   <p><a th:href="@{/admin/users}">一覧に戻る</a></p>
 </main>
+<div class="overlay" id="overlay">
+    <div class="form-container">
+        <button class="close-btn" id="closeForm">×</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>内容</th>
+                    <th>罰</th>
+                    <th>時間</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="ad : ${rireki}">
+                    <td th:text="${ad.description}"></td>
+                    <td th:text="${ad.punish}"></td>
+                    <td th:text="${ad.end}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+	        const openBtn = document.getElementById('openForm');
+	        const overlay = document.getElementById('overlay');
+	        const closeBtn = document.getElementById('closeForm');
+
+	        // 開く
+	        openBtn.onclick = function() {
+	            overlay.style.display = 'flex';
+	        };
+
+	        // 閉じる（❌ボタン）
+	        closeBtn.onclick = function() {
+	            overlay.style.display = 'none';
+	        };
+
+	        // オーバーレイの背景クリックでも閉じる（任意で追加）
+	        overlay.onclick = function(e) {
+	            if (e.target === overlay) {
+	                overlay.style.display = 'none';
+	            }
+	        };
+	    </script>
 </body>
 </html>

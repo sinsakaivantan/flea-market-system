@@ -1,8 +1,10 @@
 // src/main/java/com/example/fleamarketsystem/controller/AdminUserController.java
 package com.example.fleamarketsystem.controller;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -14,8 +16,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.fleamarketsystem.entity.Ban;
 import com.example.fleamarketsystem.entity.User;
+import com.example.fleamarketsystem.repository.AdminRepository;
+import com.example.fleamarketsystem.repository.BanRepository;
 import com.example.fleamarketsystem.repository.UserRepository;
 import com.example.fleamarketsystem.service.AdminUserService;
 
@@ -26,10 +32,13 @@ public class AdminUserController {
 
 	private final AdminUserService service;
 	private final UserRepository users;
-
-	public AdminUserController(AdminUserService service, UserRepository users) {
+	private final BanRepository banRepository;
+	private final AdminRepository adminRepository;
+	public AdminUserController(AdminUserService service, UserRepository users, BanRepository banRepository,AdminRepository adminRepository) {
 		this.service = service;
+		this.adminRepository = adminRepository;
 		this.users = users;
+		this.banRepository = banRepository;
 	}
 
 	@GetMapping
@@ -64,6 +73,22 @@ public class AdminUserController {
 		User user = service.findUser(id);
 		Double avg = service.averageRating(id);
 		long complaints = service.complaintCount(id);
+		List<Ban> aiueo = banRepository.findAllByUserId(user);
+		Optional<Ban> banOpt = banRepository.findTopByUserIdOrderByEndDesc(user);
+		if (banOpt.isPresent()) {
+            Ban ban = banOpt.get();
+            LocalDateTime now = LocalDateTime.now();
+
+            if (now.isBefore(ban.getEnd()) || now.isEqual(ban.getEnd())) {
+                LocalDateTime aaaaa = ban.getEnd();
+                model.addAttribute("aaaaa",aaaaa);
+            }else {
+            	model.addAttribute("aaaaa","通常");
+            }
+        }else {
+        	model.addAttribute("aaaaa","通常");
+        }
+		model.addAttribute("rireki", aiueo);
 		model.addAttribute("user", user);
 		model.addAttribute("avgRating", avg);
 		model.addAttribute("complaintCount", complaints);
@@ -79,6 +104,39 @@ public class AdminUserController {
 		Long adminId = users.findByEmailIgnoreCase(auth.getName()).map(User::getId).orElse(null);
 		service.banUser(id, adminId, reason, disableLogin);
 		return "redirect:/admin/users/" + id + "?banned";
+	}
+	
+	@PostMapping("/{id}/punish")
+	public String punish(@PathVariable Long id,
+			@RequestParam("description") String description,
+			@RequestParam("a") int aaaa,
+			Authentication auth,
+			RedirectAttributes redirectAttributes) {
+		User aiu = service.findUser(id);
+		int trustrunk = aiu.getTrust();
+		int damage = (10+aaaa)-trustrunk;
+		int newtrustrunk = trustrunk - damage;
+		aiu.setTrust(newtrustrunk);
+		users.save(aiu);
+		if (newtrustrunk<1) {
+			String reason = "0以下";
+			Long adminId = users.findByEmailIgnoreCase(auth.getName()).map(User::getId).orElse(null);
+			boolean disableLogin = true;
+			service.banUser(id, adminId, reason, disableLogin);
+		}else {
+			int aa = damage * 2;
+			LocalDateTime ao = LocalDateTime.now()
+									.plusDays(aa);
+			Ban kkk = new Ban();
+			kkk.setDescription(description);
+			kkk.setEnd(ao);
+			User ag = users.findById(id)
+	                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+			kkk.setUserId(ag);
+			kkk.setPunish(damage);
+			banRepository.save(kkk);
+		}
+		return "redirect:/admin/users/"+id;
 	}
 
 	@PostMapping("/{id}/unban")
