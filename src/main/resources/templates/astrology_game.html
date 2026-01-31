@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zodiac Memory | Fate Reading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #1a0b2e;
+            --card-back: #2a1b3d;
+            --gold: #d4af37;
+            --gold-glow: #f9e79f;
+            --text-main: #e0d8ff;
+            --accent-blue: #5e81ac;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #2e1a47 0%, #0d0417 100%);
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* --- 背景演出 --- */
+        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+        .magic-circle {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80vh; height: 80vh;
+            border: 1px dashed rgba(212, 175, 55, 0.15);
+            border-radius: 50%; z-index: -1;
+            animation: rotateBg 120s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes rotateBg { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* --- UI --- */
+        .game-header {
+            margin-bottom: 20px;
+            text-align: center;
+            z-index: 10;
+        }
+        h1 { margin: 0; font-size: 2.5rem; text-shadow: 0 0 10px var(--gold); letter-spacing: 0.1em; }
+        .stats { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--text-main); margin-top: 5px; }
+
+        /* --- ゲームボード --- */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr); /* 6列 */
+            gap: 15px;
+            perspective: 1000px; /* 3D効果のため */
+            z-index: 10;
+            max-width: 800px;
+        }
+
+        /* --- カード --- */
+        .card {
+            width: 80px; height: 110px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .card:hover { transform: scale(1.05); }
+        .card.flipped { transform: rotateY(180deg); }
+        .card.matched { opacity: 0; pointer-events: none; transition: opacity 0.5s 0.3s; }
+
+        .card-face {
+            position: absolute;
+            width: 100%; height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        /* カードの裏面（模様） */
+        .card-front {
+            background: var(--card-back);
+            background-image: 
+                radial-gradient(circle, var(--gold) 1px, transparent 1px),
+                radial-gradient(circle, var(--gold) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.8;
+        }
+        .card-front::after {
+            content: '✦';
+            font-size: 2rem;
+            color: rgba(212, 175, 55, 0.5);
+        }
+
+        /* カードの表面（星座） */
+        .card-back {
+            background: linear-gradient(135deg, #1a0b2e, #3a2250);
+            transform: rotateY(180deg);
+            font-size: 3rem;
+            color: var(--gold-glow);
+            text-shadow: 0 0 10px var(--gold);
+            border: 1px solid var(--gold);
+        }
+
+        /* --- オーバーレイ (クリア画面) --- */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 5, 20, 0.9);
+            z-index: 100;
+            display: none; /* 初期は非表示 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .overlay.show { display: flex; opacity: 1; }
+
+        .oracle-text {
+            font-size: 1.5rem; color: var(--text-main);
+            max-width: 600px; line-height: 1.6;
+            margin: 20px;
+            font-family: 'Cormorant Garamond', serif;
+        }
+        .rank-title { font-size: 3rem; color: var(--gold); margin-bottom: 10px; text-shadow: 0 0 20px var(--gold); }
+        
+        button {
+            background: transparent; border: 1px solid var(--gold); color: var(--gold);
+            padding: 10px 30px; font-family: 'Cinzel', serif; font-size: 1.2rem;
+            cursor: pointer; transition: 0.3s; margin-top: 20px;
+        }
+        button:hover { background: var(--gold); color: #000; box-shadow: 0 0 20px var(--gold); }
+
+        @media (max-width: 600px) {
+            .game-board { grid-template-columns: repeat(4, 1fr); }
+            .card { width: 60px; height: 80px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="starfield"></canvas>
+    <div class="magic-circle"></div>
+
+    <div class="game-header">
+        <h1>Celestial Memory</h1>
+        <div class="stats">Time: <span id="timer">0</span>s | Moves: <span id="moves">0</span></div>
+    </div>
+
+    <div class="game-board" id="gameBoard">
+        </div>
+
+    <div class="overlay" id="victoryScreen">
+        <div class="rank-title">DESTINY UNLOCKED</div>
+        <p class="oracle-text" id="oracleMessage"></p>
+        <button onclick="startGame()">Consult the Stars Again</button>
+        <br><br>
+        <a href="/items" style="color: var(--text-main); text-decoration: none; border-bottom: 1px solid var(--text-main);">Return to World</a>
+    </div>
+
+    <script>
+        // --- 星空背景 (Canvas) ---
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        const stars = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        class Star {
+            constructor() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.size = Math.random() * 2; this.alpha = Math.random();
+                this.fade = Math.random() > 0.5 ? 0.01 : -0.01;
+            }
+            update() {
+                this.alpha += this.fade;
+                if(this.alpha > 1 || this.alpha < 0) this.fade *= -1;
+            }
+            draw() {
+                ctx.globalAlpha = Math.max(0, Math.min(1, this.alpha));
+                ctx.fillStyle = '#ffffff'; ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+        function initStars() {
+            resize();
+            for(let i=0; i<150; i++) stars.push(new Star());
+            animateStars();
+        }
+        function animateStars() {
+            ctx.clearRect(0,0,width,height);
+            stars.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animateStars);
+        }
+        window.addEventListener('resize', resize);
+        initStars();
+
+        // --- ゲームロジック ---
+        
+        // 十二星座のシンボルと名前
+        const zodiacs = [
+            { symbol: '♈', name: 'Aries' }, { symbol: '♉', name: 'Taurus' },
+            { symbol: '♊', name: 'Gemini' }, { symbol: '♋', name: 'Cancer' },
+            { symbol: '♌', name: 'Leo' }, { symbol: '♍', name: 'Virgo' },
+            { symbol: '♎', name: 'Libra' }, { symbol: '♏', name: 'Scorpio' },
+            { symbol: '♐', name: 'Sagittarius' }, { symbol: '♑', name: 'Capricorn' },
+            { symbol: '♒', name: 'Aquarius' }, { symbol: '♓', name: 'Pisces' }
+        ];
+
+        // 占いメッセージ（クリア時の運勢）
+        const fortunes = [
+            "星々は告げています。あなたの直感は冴え渡り、迷いの中に光を見出すでしょう。",
+            "過去の積み重ねが、予期せぬ形で報われる時が近づいています。",
+            "新たな出会いが運命の歯車を回します。心の扉を開いておきましょう。",
+            "静寂の中に答えがあります。今は焦らず、内なる声に耳を傾けるべき時です。",
+            "困難は去り、黄金の好機が巡ってきます。勇気を持って一歩を踏み出して。",
+            "調和とバランスが鍵となります。周囲との絆があなたを高く引き上げるでしょう。"
+        ];
+
+        const gameBoard = document.getElementById('gameBoard');
+        const timerEl = document.getElementById('timer');
+        const movesEl = document.getElementById('moves');
+        const victoryScreen = document.getElementById('victoryScreen');
+        const oracleMessage = document.getElementById('oracleMessage');
+
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let timer = 0;
+        let timerInterval;
+        let isProcessing = false;
+
+        function startGame() {
+            // 初期化
+            gameBoard.innerHTML = '';
+            victoryScreen.classList.remove('show');
+            moves = 0;
+            timer = 0;
+            matchedPairs = 0;
+            movesEl.innerText = moves;
+            timerEl.innerText = timer;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => { timer++; timerEl.innerText = timer; }, 1000);
+            flippedCards = [];
+            isProcessing = false;
+
+            // カードのペア作成 (12種類 * 2 = 24枚)
+            // 難易度調整のため、ランダムに9種類(18枚)選ぶ
+            const selectedZodiacs = [...zodiacs].sort(() => 0.5 - Math.random()).slice(0, 9);
+            const deck = [...selectedZodiacs, ...selectedZodiacs];
+            
+            // シャッフル
+            deck.sort(() => 0.5 - Math.random());
+
+            // DOM生成
+            deck.forEach(zodiac => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.symbol = zodiac.symbol;
+
+                const front = document.createElement('div');
+                front.classList.add('card-face', 'card-front'); // 裏模様
+
+                const back = document.createElement('div');
+                back.classList.add('card-face', 'card-back'); // 星座記号
+                back.innerText = zodiac.symbol;
+
+                card.appendChild(front);
+                card.appendChild(back);
+                
+                card.addEventListener('click', () => flipCard(card));
+                gameBoard.appendChild(card);
+            });
+        }
+
+        function flipCard(card) {
+            // 処理中、すでにめくれている、マッチ済みの場合は無視
+            if (isProcessing || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+            // 音を鳴らすならここで (Audio API)
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                movesEl.innerText = moves;
+                checkForMatch();
+            }
+        }
+
+        function checkForMatch() {
+            isProcessing = true;
+            const [card1, card2] = flippedCards;
+
+            if (card1.dataset.symbol === card2.dataset.symbol) {
+                // マッチした場合
+                matchedPairs++;
+                setTimeout(() => {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    resetTurn();
+                    checkWin();
+                }, 800); // 0.8秒見せてから消す
+            } else {
+                // マッチしなかった場合
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    resetTurn();
+                }, 1000); // 1秒待ってから戻す
+            }
+        }
+
+        function resetTurn() {
+            flippedCards = [];
+            isProcessing = false;
+        }
+
+        function checkWin() {
+            // 全てのペア (9ペア) が揃ったら
+            if (matchedPairs === 9) {
+                clearInterval(timerInterval);
+                setTimeout(showVictory, 500);
+            }
+        }
+
+        function showVictory() {
+            // 占い結果をランダムに選択
+            const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+            oracleMessage.innerText = `「${randomFortune}」\n\nTime: ${timer}s / Moves: ${moves}`;
+            victoryScreen.classList.add('show');
+        }
+
+        // 開始
+        startGame();
+
+    </script>
+</body>
+</html>

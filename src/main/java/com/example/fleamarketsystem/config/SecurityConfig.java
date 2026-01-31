@@ -21,6 +21,7 @@ import com.example.fleamarketsystem.entity.User;
 import com.example.fleamarketsystem.repository.BanRepository;
 import com.example.fleamarketsystem.repository.UserRepository;
 import com.example.fleamarketsystem.security.MfaAuthorizationManager;
+import com.example.fleamarketsystem.service.LoginStampService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class SecurityConfig {
     private final UserRepository userRepository;
     private final BanRepository banRepository; 
     private final MfaAuthorizationManager mfaAuthorizationManager;
+    private final LoginStampService loginStampService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -96,6 +98,7 @@ public class SecurityConfig {
                     return;
                 }
             }
+            loginStampService.recordLogin(user);
             if (user.isMfaEnabled()) {
                 response.sendRedirect("/mfa/verify");
             } else {

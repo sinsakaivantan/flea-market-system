@@ -239,4 +239,9 @@ public class UserController {
 
 		return "redirect:/my-page/settings";
 	}
+	
+	@GetMapping("/stamp-card")
+	public String showStampCard() {
+	    return "stampcard(geminigatukurimasita)"; // templates/stamp_card.html を表示する
+	}
 }
