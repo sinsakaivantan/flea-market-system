@@ -2,9 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head><title>残念です</title></head>
 <body>
-    <h1>アカウントが一時停止されています</h1>
-    <p th:text="${reason}"></p>
-    <p>解除されるまでお待ちください。</p>
+    <h1>追放されてます　さようなら</h1>
     <a href="/login">ログインページに戻る</a>
 	<form th:action="@{|/igimousitate/${us.id}|}" method="post">
 		<label for="description">何かあれば書いてくださいね:</label>

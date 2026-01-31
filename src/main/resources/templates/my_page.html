@@ -13,7 +13,6 @@
 
         <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}"></div>
         <div th:if="${successMessage}" class="success-message" th:text="${successMessage}"></div>
-
         <div class="mypage-profile-section">
             <div class="mypage-avatar">
                 <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : '/images/default-user.png'}"

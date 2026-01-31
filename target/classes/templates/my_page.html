@@ -6,11 +6,85 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-    <div class="container">
-        <h1>マイページ</h1>
-        <p>ようこそ、<span th:text="${user.name}"></span>さん！</p>
+    <header th:insert="~{fragments/layout :: header}"></header>
+    <div class="container mypage-container">
+        <h1 class="mypage-title">マイページ</h1>
+        <div class="mypage-header-divider"></div>
 
-        <div class="main-nav">
+        <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}"></div>
+        <div th:if="${successMessage}" class="success-message" th:text="${successMessage}"></div>
+        <div class="mypage-profile-section">
+            <div class="mypage-avatar">
+                <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : '/images/default-user.png'}"
+                     alt="プロフィール画像"
+                     class="profile-image">
+            </div>
+            <div class="mypage-info">
+                <div class="mypage-name-row">
+                    <div class="mypage-username" th:text="${user.name}"></div>
+                    <a th:href="@{/my-page/settings}" class="mypage-gear-button">
+                        <span class="mypage-gear-icon">⚙</span>
+                    </a>
+                </div>
+                <div class="mypage-rating-row">
+                    <div class="mypage-stars" th:if="${reviewCount > 0}">
+                        <span th:each="starClass : ${starClasses}"
+                              class="star-icon"
+                              th:classappend=" ' ' + ${starClass}">
+                            ★
+                        </span>
+                        <span class="mypage-rating-score" th:text="${averageRatingFormatted}"></span>
+                        <span class="mypage-rating-count" th:text="${reviewCount}"></span>
+                    </div>
+                    <div class="mypage-rating-row" th:if="${reviewCount == 0}">
+                        <span class="mypage-rating-count">まだ評価がありません</span>
+                    </div>
+                </div>
+                <div class="mypage-stats-row">
+                    <div class="mypage-stat-item">
+                        <div class="mypage-stat-label">出品数</div>
+                        <div class="mypage-stat-value" th:text="${itemCount}"></div>
+                    </div>
+                    <a th:href="@{/followlist}" class="mypage-stat-item mypage-stat-link">
+                        <div class="mypage-stat-label">フォロー数</div>
+                        <div class="mypage-stat-value" th:text="${followingCount}"></div>
+                    </a>
+                    <a th:href="@{/followers}" class="mypage-stat-item mypage-stat-link">
+                        <div class="mypage-stat-label">フォロワー数</div>
+                        <div class="mypage-stat-value" th:text="${followerCount}"></div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="mypage-divider"></div>
+
+        <div class="mypage-tabs">
+            <a th:href="@{/my-page/selling}" class="mypage-tab-link">出品管理</a>
+            <a th:href="@{/my-page/sales}" class="mypage-tab-link">販売管理</a>
+            <a th:href="@{/my-page/favorites}" class="mypage-tab-link">お気に入り</a>
+        </div>
+
+        <div class="mypage-divider"></div>
+
+        <h2 class="mypage-section-title">出品した商品</h2>
+        <div class="item-grid">
+            <div class="item-card" th:each="item : ${activeItems}">
+                <a th:href="@{/items/{id}(id=${item.id})}">
+                    <img th:src="${item.imageUrl != null ? item.imageUrl : '/images/noimage.png'}" alt="商品画像">
+                    <h3 th:text="${item.name}"></h3>
+                    <p class="price" th:text="'¥' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}"></p>
+                    <p class="status" th:text="${item.status}"></p>
+                </a>
+            </div>
+            <div th:if="${#lists.isEmpty(activeItems)}">
+                <p>出品中の商品はありません。</p>
+            </div>
+        </div>
+
+        <div class="mypage-divider"></div>
+
+        <div class="main-nav mypage-bottom-nav">
             <a th:href="@{/my-page/selling}" class="button">出品管理</a>
             <a th:href="@{/my-page/orders}" class="button">購入履歴</a>
             <a th:href="@{/my-page/sales}" class="button">販売履歴</a>
@@ -21,11 +95,6 @@
                 <button type="submit" class="button danger">ログアウト</button>
             </form>
         </div>
-
-        <h2>アカウント情報</h2>
-        <p><strong>名前:</strong> <span th:text="${user.name}"></span></p>
-        <p><strong>メールアドレス:</strong> <span th:text="${user.email}"></span></p>
-        <p><strong>役割:</strong> <span th:text="${user.role}"></span></p>
 
     </div>
 </body>

@@ -121,7 +121,7 @@ public class AdminUserController {
 		if (newtrustrunk<1) {
 			String reason = "0以下";
 			Long adminId = users.findByEmailIgnoreCase(auth.getName()).map(User::getId).orElse(null);
-			boolean disableLogin = true;
+			boolean disableLogin = false;
 			service.banUser(id, adminId, reason, disableLogin);
 		}else {
 			int aa = damage * 2;

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title th:text="${item.name} + ' - 商品詳細'"></title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 	<style> 
 		        .overlay {
 		            display: none; /* 最初は非表示 */
@@ -137,23 +139,117 @@
             </div>
         </div>
 
-        <h2>チャット</h2>
-        <div class="chat-box">
-            <div th:each="chat : ${chats}" class="chat-message" th:classappend="${chat.sender.email == #authentication.name ? 'my-message' : 'other-message'}">
-                <span class="sender-name" th:text="${chat.sender.name}"></span>
-                <span class="message-time" th:text="${#temporals.format(chat.createdAt, 'yyyy/MM/dd HH:mm')}"></span>
-                <p th:text="${chat.message}"></p>
-            </div>
-            <div th:if="${#lists.isEmpty(chats)}">
-                <p>まだチャットメッセージはありません。</p>
-            </div>
-        </div>
+		<h2>チャット</h2>
+		<div class="chat-box" id="chatBox">
+		    <div th:each="chat : ${chats}" class="chat-message" 
+		         th:classappend="${chat.sender.email == #authentication.name ? 'my-message' : 'other-message'}">
+		        <span class="sender-name" th:text="${chat.sender.name}"></span>
+		        <span class="message-time" th:text="${#temporals.format(chat.createdAt, 'yyyy/MM/dd HH:mm')}"></span>
+		        <p th:text="${chat.message}"></p>
+		    </div>
+		    <div id="noMessage" th:if="${#lists.isEmpty(chats)}">
+		        <p>まだチャットメッセージはありません。</p>
+		    </div>
+		</div>
 
-        <form th:action="@{/chat/{itemId}(itemId=${item.id})}" method="post" class="chat-form">
-            <textarea name="message" placeholder="メッセージを入力してください" required></textarea>
-            <button type="submit">送信</button>
-        </form>
+		<form id="chatForm" class="chat-form">
+		    <textarea id="messageInput" name="message" placeholder="メッセージを入力してください" required></textarea>
+		    <button type="submit">送信</button>
+		</form>
+		<script th:inline="javascript">
+		    /*<![CDATA[*/
+		    const itemId = /*[[${item.id}]]*/ 0;
+		    const currentUserEmail = /*[[${#authentication.name}]]*/ '';
+		    
+		    let stompClient = null;
 
+		    function connect() {
+		        const socket = new SockJS('/ws-chat'); // WebSocketConfigで設定したエンドポイント
+		        stompClient = Stomp.over(socket);
+		        stompClient.debug = null; // デバッグログを抑制したい場合
+
+		        stompClient.connect({}, function (frame) {
+		            console.log('Connected: ' + frame);
+		            
+		            // トピックを購読 (この商品IDのチャットルーム)
+		            stompClient.subscribe('/topic/chat/' + itemId, function (messageOutput) {
+		                showMessage(JSON.parse(messageOutput.body));
+		            });
+		        }, function(error) {
+		            console.error('Connection lost', error);
+		            // 再接続ロジックなどを入れると尚良い
+		        });
+		    }
+
+		    function sendMessage(event) {
+		        event.preventDefault(); // フォームのデフォルト送信をキャンセル
+		        const messageInput = document.getElementById('messageInput');
+		        const messageContent = messageInput.value.trim();
+
+		        if (messageContent && stompClient) {
+		            const chatMessage = {
+		                itemId: itemId,
+		                message: messageContent
+		            };
+		            // サーバーへ送信
+		            stompClient.send("/app/chat/" + itemId + "/send", {}, JSON.stringify(chatMessage));
+		            messageInput.value = ''; // 入力欄をクリア
+		        }
+		    }
+
+		    function showMessage(message) {
+		        const chatBox = document.getElementById('chatBox');
+		        const noMessageDiv = document.getElementById('noMessage');
+		        
+		        if (noMessageDiv) {
+		            noMessageDiv.style.display = 'none';
+		        }
+
+		        // メッセージ要素を作成
+		        const messageDiv = document.createElement('div');
+		        messageDiv.classList.add('chat-message');
+		        
+		        // 自分か相手かでクラスを切り替え
+		        if (message.senderEmail === currentUserEmail) {
+		            messageDiv.classList.add('my-message');
+		        } else {
+		            messageDiv.classList.add('other-message');
+		        }
+
+		        // 内部HTMLを構築
+		        const senderSpan = document.createElement('span');
+		        senderSpan.classList.add('sender-name');
+		        senderSpan.textContent = message.senderName;
+
+		        const timeSpan = document.createElement('span');
+		        timeSpan.classList.add('message-time');
+		        timeSpan.textContent = message.createdAt; // 必要に応じてフォーマット調整
+
+		        const p = document.createElement('p');
+		        p.textContent = message.message;
+
+		        messageDiv.appendChild(senderSpan);
+		        messageDiv.appendChild(timeSpan);
+		        messageDiv.appendChild(p);
+
+		        chatBox.appendChild(messageDiv);
+		        
+		        // 最新メッセージが見えるようにスクロール
+		        chatBox.scrollTop = chatBox.scrollHeight;
+		    }
+
+		    // 初期化
+		    document.addEventListener('DOMContentLoaded', function() {
+		        connect();
+		        document.getElementById('chatForm').addEventListener('submit', sendMessage);
+		        
+		        // 初期ロード時も一番下へスクロール
+		        const chatBox = document.getElementById('chatBox');
+		        chatBox.scrollTop = chatBox.scrollHeight;
+		    });
+
+		    /*]]>*/
+		</script>
         <div class="button-group">
             <a th:href="@{/items}" class="button secondary">商品一覧に戻る</a>
         </div>

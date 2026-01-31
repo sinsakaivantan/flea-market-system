@@ -8,18 +8,28 @@
 
 <body>
   <header th:fragment="header">
-    <nav class="navbar">
-      <a class="brand" th:href="@{/items}">FleaMarket</a>
-      <div class="nav-links">
-        <a th:href="@{/items}">商品一覧</a>
-        <a th:href="@{/admin/users}" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">ユーザー管理</a>
+    <nav class="global-header">
+      <a class="header-logo" th:href="@{/items}">
+        <img th:src="@{/images/logo.png}" alt="フリマアプリ" class="header-logo-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+        <span class="header-logo-text" style="display:none;">flea market</span>
+      </a>      
+      <div class="header-right" sec:authorize="isAuthenticated()">
+        <a th:href="@{/admin/users}" 
+           class="header-admin-button"
+           th:if="${currentUser != null and currentUser.role == 'ADMIN'}">
+          ユーザー管理
+        </a>      
+        <a th:href="@{/my-page}" class="header-user-info">
+          <img th:src="${currentUser != null and currentUser.profileImageUrl != null ? currentUser.profileImageUrl : '/images/default-user.png'}" 
+               alt="プロフィール画像" 
+               class="header-profile-image">
+          <span class="header-username" th:text="${currentUserNameDisplay}"></span>
+        </a>
+        <a th:href="@{/followlist}" class="header-follow-link">フォロー</a>       
+        <a th:href="@{/items/new}" class="header-post-button">
+          出品<span class="header-plus">+</span>
+        </a>
       </div>
-
-      <!-- ログアウト：POST /logout（CSRF 必須） -->
-      <form th:action="@{/logout}" method="post" class="logout-form">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <button type="submit">ログアウト</button>
-      </form>
     </nav>
   </header>
 </body>

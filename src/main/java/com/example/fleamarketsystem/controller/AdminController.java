@@ -56,15 +56,13 @@ public class AdminController {
 	}
 	
 	@PostMapping("/{ad}/sikibetu")
-	@ResponseBody  // ← これ超重要！ ThymeleafビューじゃなくJSONやテキストを返す
+	@ResponseBody  
 	public Map<String, Object> sikibetu(@PathVariable("ad") Admin aiu) {
 	    Integer current = aiu.getSikibetu();
 	    int newValue = (current == 0) ? 1 : 0;
 	    
 	    aiu.setSikibetu(newValue);
 	    adminRepository.save(aiu);
-	    
-	    // 成功したら新しい値をクライアントに返す（UI更新に便利）
 	    Map<String, Object> response = new HashMap<>();
 	    response.put("success", true);
 	    response.put("newSikibetu", newValue);

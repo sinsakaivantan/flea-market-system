@@ -36,10 +36,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 			log.warn("Account disabled for user: {}", username);
 			throw new DisabledException("Account disabled");
 		}
-		if (u.isBanned()) {
+		/*if (u.isBanned()) {
 			log.warn("Account banned for user: {}", username);
 			throw new DisabledException("Account banned");
-		}
+		}*/
 
 		return new org.springframework.security.core.userdetails.User(
 				u.getEmail(),
