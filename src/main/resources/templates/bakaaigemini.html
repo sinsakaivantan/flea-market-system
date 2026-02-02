@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="_csrf" th:content="${_csrf.token}"/>
+<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+<title>Omni-Directional Striker</title>
+<style>
+  body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #050510;
+    color: #fff;
+    font-family: 'Courier New', sans-serif;
+    overflow: hidden;
+  }
+  #game-container {
+    position: relative;
+    box-shadow: 0 0 40px rgba(0, 200, 255, 0.2);
+  }
+  canvas {
+    border: 2px solid #444;
+    background: radial-gradient(circle at center, #1a1a2e, #000);
+    display: block;
+  }
+  #ui {
+    position: absolute;
+    top: 10px; left: 10px;
+    font-size: 20px; font-weight: bold;
+    text-shadow: 0 0 5px #000;
+    z-index: 10;
+    display: flex; flex-direction: column; gap: 5px; /* 縦並びに変更 */
+  }
+  .ui-row { display: flex; gap: 20px; }
+  
+  /* 必殺技ゲージのスタイル */
+  #ult-status {
+      color: #aaa;
+      transition: 0.2s;
+  }
+  .ult-ready {
+      color: #ff0055 !important;
+      text-shadow: 0 0 10px #ff0055, 0 0 20px red;
+      animation: pulse 0.5s infinite alternate;
+  }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+
+  #message-screen {
+    position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; width: 100%; pointer-events: none;
+  }
+  #ranking-board {
+    display: none;
+    position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 400px;
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #00ffcc;
+    padding: 20px;
+    text-align: center;
+    z-index: 100;
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
+  }
+  .rank-item {
+    display: flex; justify-content: space-between;
+    padding: 5px 10px; border-bottom: 1px solid #333;
+  }
+  .rank-item:nth-child(1) { color: #ffd700; font-weight: bold; }
+  .rank-item:nth-child(2) { color: #c0c0c0; }
+  .rank-item:nth-child(3) { color: #cd7f32; }
+  
+  .loading { color: #ffff00; font-size: 24px; }
+  .error { color: #ff4444; font-size: 18px; background: rgba(0,0,0,0.8); padding: 20px;}
+</style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="ui">
+        <div class="ui-row">
+            <div>SCORE: <span id="score">0</span></div>
+            <div style="color: #aaa;">BEST: <span id="best-score">---</span></div>
+        </div>
+        <div id="ult-status">ULT: 0/10</div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="message-screen">
+        <div class="loading">Loading Images...</div>
+    </div>
+
+    <div id="ranking-board">
+        <h2 style="color: #00ffcc; margin-top: 0;">TOP RANKING</h2>
+        <div id="ranking-list" style="margin-bottom: 20px;"></div>
+        <p style="font-size: 14px; color: #aaa;">Press ENTER to Restart</p>
+    </div>
+  </div>
+
+<script>
+// --- 設定エリア ---
+const PLAYER_SRC = '/assets/gemini-color.png';
+const ENEMY_SOURCES = [
+    '/assets/claude-color.png',
+    '/assets/new-ChatGPT-icon-white-png-large-size.png',
+    '/assets/deepseek-color.png' ,
+	'/assets/copilot-color.png',
+	'/assets/grok-dark.webp'
+];
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 800; 
+canvas.height = 800;
+const messageScreen = document.getElementById('message-screen');
+const rankingBoard = document.getElementById('ranking-board');
+const rankingList = document.getElementById('ranking-list');
+const bestScoreEl = document.getElementById('best-score');
+const ultStatusEl = document.getElementById('ult-status');
+
+// CSRFトークン
+const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+// ゲーム状態
+let score = 0;
+let gameOver = false;
+let animationId;
+let gameStarted = false;
+let myBestScore = 0;
+let killCountForUlt = 0; // 必殺技用カウント
+
+// キー入力管理
+const keys = {
+    ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
+    w: false, s: false, a: false, d: false,
+    ' ': false, Enter: false
+};
+
+// --- API通信 ---
+async function fetchMyBest() {
+    try {
+        const res = await fetch('/api/shooting/my-best');
+        if (res.ok) {
+            myBestScore = await res.json();
+            bestScoreEl.innerText = myBestScore;
+        }
+    } catch (e) {}
+}
+
+async function sendScore(finalScore) {
+    try {
+        await fetch('/api/shooting/score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+            body: JSON.stringify({ score: finalScore })
+        });
+        showRanking();
+        if (finalScore > myBestScore) {
+            myBestScore = finalScore;
+            bestScoreEl.innerText = myBestScore;
+        }
+    } catch (e) {}
+}
+
+async function showRanking() {
+    try {
+        const res = await fetch('/api/shooting/ranking');
+        if (res.ok) {
+            const data = await res.json();
+            rankingList.innerHTML = '';
+            if (data.length === 0) rankingList.innerHTML = '<p>No Records</p>';
+            data.forEach((record, index) => {
+                const div = document.createElement('div');
+                div.className = 'rank-item';
+                div.innerHTML = `<span>#${index + 1} ${escapeHtml(record.username)}</span><span>${record.score}</span>`;
+                rankingList.appendChild(div);
+            });
+            rankingBoard.style.display = 'block';
+        }
+    } catch (e) {}
+}
+function escapeHtml(str) {
+    if(!str) return 'No Name';
+    return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+}
+
+// --- 画像読み込み ---
+const playerImage = new Image();
+const enemyImages = [];
+let imagesLoadedCount = 0;
+const totalImagesToLoad = 1 + ENEMY_SOURCES.length;
+
+function checkAllImagesLoaded() {
+    imagesLoadedCount++;
+    if (imagesLoadedCount === totalImagesToLoad) {
+        messageScreen.innerHTML = '';
+        fetchMyBest();
+        startGame();
+    }
+}
+function handleImageError(src) { messageScreen.innerHTML = `<div class="error">Image Load Error: ${src}</div>`; }
+
+playerImage.src = PLAYER_SRC;
+playerImage.onload = checkAllImagesLoaded;
+playerImage.onerror = () => handleImageError(PLAYER_SRC);
+
+ENEMY_SOURCES.forEach(src => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => { enemyImages.push(img); checkAllImagesLoaded(); };
+    img.onerror = () => handleImageError(src);
+});
+
+
+// --- クラス定義 ---
+
+class Player {
+  constructor() {
+    this.width = 50; this.height = 50;
+    this.x = canvas.width / 2; 
+    this.y = canvas.height / 2; 
+    this.speed = 5; 
+    this.angle = -Math.PI / 2; 
+    this.rotationSpeed = 0.08; 
+    this.image = playerImage;
+    this.lastShotTime = 0;
+  }
+  
+  draw() { 
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle + Math.PI / 2);
+      ctx.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
+      ctx.restore();
+  }
+  
+  update() {
+    if (keys.ArrowLeft || keys.a) this.angle -= this.rotationSpeed;
+    if (keys.ArrowRight || keys.d) this.angle += this.rotationSpeed;
+
+    if (keys.ArrowUp || keys.w) {
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+    }
+    if (keys.ArrowDown || keys.s) {
+        this.x -= Math.cos(this.angle) * (this.speed * 0.5); 
+        this.y -= Math.sin(this.angle) * (this.speed * 0.5);
+    }
+
+    this.x = Math.max(this.width/2, Math.min(canvas.width - this.width/2, this.x));
+    this.y = Math.max(this.height/2, Math.min(canvas.height - this.height/2, this.y));
+
+    // ★自動連射 (1秒に10発 = 100ms間隔)
+    const now = Date.now();
+    if (now - this.lastShotTime > 100) {
+        bullets.push(new Bullet(this.x, this.y, this.angle));
+        this.lastShotTime = now;
+    }
+  }
+}
+
+class Enemy {
+  constructor(x, y, speed, img) {
+    this.x = x; this.y = y; 
+    this.width = 45; this.height = 45;
+    this.image = img; 
+    this.speed = speed;
+    this.angle = 0; 
+    this.shootInterval = Math.random() * 150 + 100;
+    this.timer = 0;
+  }
+  
+  draw() {
+    ctx.save(); 
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle + Math.PI / 2); 
+    ctx.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
+    ctx.restore();
+  }
+  
+  update() { 
+      const dx = player.x - this.x;
+      const dy = player.y - this.y;
+      this.angle = Math.atan2(dy, dx);
+
+      this.x += Math.cos(this.angle) * this.speed;
+      this.y += Math.sin(this.angle) * this.speed;
+
+      this.timer++;
+      if (this.timer > this.shootInterval) {
+          enemyBullets.push(new EnemyBullet(this.x, this.y, this.angle));
+          this.timer = 0;
+          this.shootInterval = Math.random() * 100 + 150;
+      }
+  }
+}
+
+class Bullet {
+  constructor(x, y, angle) {
+    this.x = x; this.y = y; 
+    this.radius = 4; this.color = '#00ffcc'; this.speed = 12;
+    this.angle = angle;
+    this.x += Math.cos(angle) * 30;
+    this.y += Math.sin(angle) * 30;
+  }
+  draw() {
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = this.color; ctx.fill();
+    ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fill(); ctx.shadowBlur = 0;
+  }
+  update() { 
+      this.x += Math.cos(this.angle) * this.speed;
+      this.y += Math.sin(this.angle) * this.speed;
+  }
+}
+
+class EnemyBullet {
+    constructor(x, y, angle) {
+        this.x = x; this.y = y; 
+        this.radius = 5; this.color = '#ff4444'; this.speed = 5;
+        this.angle = angle;
+    }
+    draw() {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color; ctx.fill();
+        ctx.shadowBlur = 5; ctx.shadowColor = this.color; ctx.fill(); ctx.shadowBlur = 0;
+    }
+    update() { 
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y; this.radius = Math.random() * 3;
+        this.color = color;
+        this.velocity = { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8 };
+        this.alpha = 1;
+    }
+    draw() {
+        ctx.save(); ctx.globalAlpha = this.alpha; ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color; ctx.fill(); ctx.restore();
+    }
+    update() { this.x += this.velocity.x; this.y += this.velocity.y; this.alpha -= 0.04; }
+}
+
+// --- ゲーム制御 ---
+let bullets = [];
+let enemies = [];
+let enemyBullets = [];
+let particles = [];
+
+function init() {
+    player = new Player();
+    bullets = [];
+    enemies = [];
+    enemyBullets = [];
+    particles = [];
+    score = 0;
+    gameOver = false;
+    killCountForUlt = 0;
+    updateUltUI();
+    document.getElementById('score').innerText = score;
+    rankingBoard.style.display = 'none';
+}
+
+function updateUltUI() {
+    if (killCountForUlt >= 10) {
+        ultStatusEl.innerText = "ULT: READY (SPACE)";
+        ultStatusEl.className = "ult-ready";
+    } else {
+        ultStatusEl.innerText = `ULT: ${killCountForUlt}/10`;
+        ultStatusEl.className = "";
+    }
+}
+
+// ★必殺技発動処理
+function activateUltimate() {
+    if (killCountForUlt < 10) return;
+    
+    // 画面揺らし等の演出をいれても良いが、まずは全敵削除
+    // 敵の数だけ爆発させる
+    enemies.forEach(e => {
+        createExplosion(e.x, e.y, '#ff0055');
+        score += 100; // スコアは加算する
+    });
+    
+    enemies = []; // 全滅
+    enemyBullets = []; // 敵の弾も消してあげる（優しさ）
+    
+    killCountForUlt = 0; // リセット
+    updateUltUI();
+    document.getElementById('score').innerText = score;
+    
+    // 必殺技エフェクト（画面フラッシュ）
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+}
+
+
+document.addEventListener('keydown', e => { 
+    keys[e.key] = true; 
+    
+    // 必殺技
+    if (e.key === ' ' && gameStarted && !gameOver) {
+        activateUltimate();
+    }
+
+    // リスタート
+    if (e.key === 'Enter' && gameOver) {
+        init(); 
+        animate(); 
+        spawnEnemy(); 
+    }
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+function spawnEnemy() {
+  if (gameOver || !gameStarted) return;
+  
+  let ex, ey;
+  if (Math.random() < 0.5) {
+      ex = Math.random() * canvas.width;
+      ey = Math.random() < 0.5 ? -50 : canvas.height + 50;
+  } else {
+      ex = Math.random() < 0.5 ? -50 : canvas.width + 50;
+      ey = Math.random() * canvas.height;
+  }
+
+  const speed = Math.random() * 1.5 + 1; 
+  const randomImg = enemyImages[Math.floor(Math.random() * enemyImages.length)];
+  enemies.push(new Enemy(ex, ey, speed, randomImg));
+  
+  let spawnRate = 1000;
+  if (score > 1000) spawnRate = 800;
+  if (score > 3000) spawnRate = 600;
+
+  setTimeout(spawnEnemy, spawnRate);
+}
+
+function createExplosion(x, y, color = '#ffaa00') {
+    for(let i = 0; i < 15; i++) particles.push(new Particle(x, y, color));
+}
+
+function checkCollision(obj1, r1, obj2, r2) {
+    const dx = obj1.x - obj2.x;
+    const dy = obj1.y - obj2.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance < r1 + r2;
+}
+
+function animate() {
+  if (gameOver) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return;
+  }
+
+  animationId = requestAnimationFrame(animate);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  player.update();
+  player.draw();
+
+  particles.forEach((p, i) => {
+      if (p.alpha <= 0) particles.splice(i, 1);
+      else { p.update(); p.draw(); }
+  });
+
+  bullets.forEach((b, bi) => {
+    b.update(); b.draw();
+    if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+        bullets.splice(bi, 1);
+        return;
+    }
+    
+    enemies.forEach((e, ei) => {
+      if (checkCollision(b, b.radius, e, e.width/2)) {
+        createExplosion(e.x, e.y);
+        enemies.splice(ei, 1);
+        bullets.splice(bi, 1);
+        score += 100;
+        document.getElementById('score').innerText = score;
+        
+        // ★ULTチャージ (MAX10まで)
+        if (killCountForUlt < 10) {
+            killCountForUlt++;
+            updateUltUI();
+        }
+      }
+    });
+  });
+
+  enemyBullets.forEach((eb, index) => {
+      eb.update(); eb.draw();
+      if (eb.x < 0 || eb.x > canvas.width || eb.y < 0 || eb.y > canvas.height) {
+          enemyBullets.splice(index, 1);
+          return;
+      }
+      if(checkCollision(eb, eb.radius, player, player.width/3)) {
+          createExplosion(player.x, player.y, '#00ffcc');
+          handleGameOver();
+      }
+  });
+
+  enemies.forEach((e, index) => {
+    e.update(); e.draw();
+    if (checkCollision(e, e.width/2.5, player, player.width/2.5)) {
+        createExplosion(player.x, player.y, '#00ffcc');
+        handleGameOver();
+    }
+  });
+}
+
+function handleGameOver() {
+    if(!gameOver) {
+        gameOver = true;
+        sendScore(score);
+    }
+}
+
+function startGame() {
+    gameStarted = true;
+    init();
+    spawnEnemy();
+    animate();
+}
+
+</script>
+</body>
+</html>

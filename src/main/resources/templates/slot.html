@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eye-Press Slot 777</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<style>
+    /* --- 通常時のスタイル (ダークで神秘的) --- */
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(circle at center, #1a0b2e 0%, #000 100%);
+        color: #fff;
+        font-family: 'Cinzel', serif;
+        overflow: hidden;
+    }
+
+    .slot-machine {
+        background: rgba(0, 0, 0, 0.8);
+        padding: 40px;
+        border-radius: 20px;
+        border: 4px solid #d4af37;
+        box-shadow: 0 0 50px rgba(212, 175, 55, 0.3);
+        text-align: center;
+    }
+
+    .title {
+        color: #d4af37;
+        font-size: 2rem;
+        margin-bottom: 30px;
+        letter-spacing: 0.2em;
+    }
+
+    .reel-container {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        background: #111;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #555;
+    }
+
+    /* リール (数字が表示される箱) */
+    .reel {
+        width: 100px;
+        height: 140px;
+        background: linear-gradient(to bottom, #222, #000, #222);
+        border: 2px solid #666;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 5rem;
+        font-family: 'Arial', sans-serif; /* 数字は見やすく */
+        font-weight: bold;
+        color: #ccc;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.1s;
+        box-shadow: inset 0 0 20px #000;
+    }
+
+    .reel:active {
+        transform: scale(0.95);
+    }
+
+    /* 停止済み */
+    .reel.stopped {
+        border-color: #d4af37;
+        background: #333;
+        cursor: default;
+    }
+
+    /* 7だけ光るクラス (回転中も適用) */
+    .reel.seven-glow {
+        color: #ff0000; /* 赤文字 */
+        text-shadow: 
+            0 0 10px #ff0000,
+            0 0 20px #ffaa00,
+            0 0 40px #ffff00;
+        background: #2a0000;
+        animation: flash 0.1s infinite;
+    }
+
+    @keyframes flash {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    .controls {
+        margin-top: 30px;
+    }
+
+    .btn {
+        background: transparent;
+        border: 1px solid #d4af37;
+        color: #d4af37;
+        padding: 10px 30px;
+        font-family: 'Cinzel', serif;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn:hover {
+        background: #d4af37;
+        color: #000;
+    }
+
+    /* --- クソダサ勝利画面 --- */
+    #winOverlay {
+        display: none; /* 最初は隠す */
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: blue; /* 原色の青 */
+        z-index: 9999;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        animation: bg-pika 0.2s infinite; /* 背景ピカピカ */
+    }
+
+    @keyframes bg-pika {
+        0% { background: blue; }
+        50% { background: red; }
+        100% { background: yellow; }
+    }
+
+    .dasa-font {
+        font-family: "MS Mincho", "MS PMincho", "Times New Roman", serif; /* 明朝体 */
+        font-size: 8vw; /* 画面幅に合わせて巨大化 */
+        font-weight: 900;
+        color: #ff00ff; /* マゼンタ */
+        /* 文字を縦に引き伸ばす */
+        transform: scale(1, 4);
+        margin: 50px 0;
+        white-space: nowrap;
+        
+        /* 猛烈な影 */
+        text-shadow: 
+            5px 5px 0px #000,
+            10px 10px 0px #fff,
+            15px 15px 0px #00ff00;
+    }
+
+    .wordart {
+        font-family: "Comic Sans MS", cursive, sans-serif;
+        font-size: 3rem;
+        color: cyan;
+        transform: rotate(-15deg);
+        text-decoration: underline wavy red;
+        margin-top: 100px;
+        border: 5px dotted white;
+        padding: 10px;
+        background: black;
+    }
+
+    .confetti {
+        position: absolute;
+        font-size: 2rem;
+        animation: fall 2s linear infinite;
+    }
+
+    @keyframes fall {
+        to { transform: translateY(100vh) rotate(720deg); }
+    }
+
+</style>
+</head>
+<body>
+
+    <div class="slot-machine">
+        <div class="title">DESTINY SLOT</div>
+        
+        <div class="reel-container">
+            <div class="reel" id="reel0" onclick="stopReel(0)">1</div>
+            <div class="reel" id="reel1" onclick="stopReel(1)">1</div>
+            <div class="reel" id="reel2" onclick="stopReel(2)">1</div>
+        </div>
+
+        <div class="controls">
+            <p>Click Panels to Stop!</p>
+            <button class="btn" onclick="resetGame()">RETRY</button>
+        </div>
+    </div>
+
+    <div id="winOverlay">
+        <div class="dasa-font">おめでとうございまし</div>
+        
+        <div class="wordart">BIG BONUS!!</div>
+        <button class="btn" style="background: white; color: black; border: 5px solid black; font-weight: bold; margin-top: 150px; transform: scale(2);" onclick="resetGame()">戻る</button>
+    </div>
+
+<script>
+    // 設定
+    const reelElements = [
+        document.getElementById('reel0'),
+        document.getElementById('reel1'),
+        document.getElementById('reel2')
+    ];
+    
+    // 状態管理
+    let reels = [
+        { value: 1, interval: null, stopped: false },
+        { value: 1, interval: null, stopped: false },
+        { value: 1, interval: null, stopped: false }
+    ];
+
+    const winOverlay = document.getElementById('winOverlay');
+
+    // ゲーム開始
+    function startGame() {
+        winOverlay.style.display = 'none';
+        
+        reels.forEach((reel, index) => {
+            reel.value = Math.floor(Math.random() * 9) + 1;
+            reel.stopped = false;
+            reelElements[index].classList.remove('stopped', 'seven-glow');
+            
+            // 回転開始（目押しできるよう、少し速度差をつけるが、基本は目で追える速さ）
+            // 80ms 〜 100ms くらいが目押ししやすい
+            const speed = 80; 
+            
+            // 既存のインターバルがあればクリア
+            if (reel.interval) clearInterval(reel.interval);
+
+            reel.interval = setInterval(() => {
+                // 数字更新 (1-9)
+                reel.value++;
+                if (reel.value > 9) reel.value = 1;
+                
+                updateVisual(index, reel.value);
+            }, speed);
+        });
+    }
+
+    // 表示更新
+    function updateVisual(index, value) {
+        const el = reelElements[index];
+        el.innerText = value;
+
+        // 7の時だけ光らせる
+        if (value === 7) {
+            el.classList.add('seven-glow');
+        } else {
+            el.classList.remove('seven-glow');
+        }
+    }
+
+    // ストップボタン（リールクリック）処理
+    window.stopReel = function(index) {
+        const reel = reels[index];
+        
+        // すでに止まってたら何もしない
+        if (reel.stopped) return;
+
+        // 停止
+        clearInterval(reel.interval);
+        reel.stopped = true;
+        reelElements[index].classList.add('stopped');
+        
+        // 7で止まった場合は光らせっぱなしにするための処理
+        // (updateVisualでクラスがついているはずだが、念のため確認)
+        if (reel.value === 7) {
+            reelElements[index].classList.add('seven-glow');
+        } else {
+            reelElements[index].classList.remove('seven-glow');
+        }
+
+        checkWin();
+    };
+
+    // 勝利判定
+    function checkWin() {
+        // 全リールが止まっているか確認
+        if (reels.some(r => !r.stopped)) return;
+
+        // 全て7か？
+        const isAllSeven = reels.every(r => r.value === 7);
+
+        if (isAllSeven) {
+            setTimeout(() => {
+                showWinScreen();
+            }, 500);
+        }
+    }
+
+    // 勝利画面表示
+    function showWinScreen() {
+        winOverlay.style.display = 'flex';
+        // 紙吹雪を散らす
+        for(let i=0; i<50; i++) {
+            createConfetti();
+        }
+    }
+
+    function createConfetti() {
+        const confetti = document.createElement('div');
+        confetti.innerText = Math.random() > 0.5 ? '㊗' : '7';
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        winOverlay.appendChild(confetti);
+    }
+
+    window.resetGame = function() {
+        // 紙吹雪削除
+        const confettis = document.querySelectorAll('.confetti');
+        confettis.forEach(c => c.remove());
+        
+        startGame();
+    };
+
+    // 初回起動
+    startGame();
+
+</script>
+</body>
+</html>

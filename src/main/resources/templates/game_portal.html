@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade of Fate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #1a0b2e;
+            --gold: #d4af37;
+            --gold-glow: #f9e79f;
+            --text-main: #e0d8ff;
+            --card-bg: rgba(20, 10, 40, 0.6);
+            --border-color: rgba(212, 175, 55, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #2e1a47 0%, #0d0417 100%);
+            color: var(--gold);
+            font-family: 'Cinzel', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* --- 背景演出 --- */
+        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+        .magic-bg {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 100vh; height: 100vh;
+            border: 1px dashed rgba(212, 175, 55, 0.1);
+            border-radius: 50%; z-index: -1;
+            animation: rotateBg 180s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes rotateBg { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* --- ヘッダー --- */
+        header {
+            margin-top: 60px;
+            margin-bottom: 40px;
+            text-align: center;
+            z-index: 10;
+        }
+        h1 {
+            font-size: 3rem;
+            text-shadow: 0 0 15px var(--gold);
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+        }
+        p.subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        /* --- ゲームグリッド --- */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            width: 90%;
+            max-width: 1000px;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        /* --- ゲームカード --- */
+        .game-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            text-decoration: none;
+            transition: all 0.4s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--gold);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+        }
+
+        /* 画像エリア */
+        .card-image-wrapper {
+            width: 100%;
+            height: 180px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: 0.4s;
+            opacity: 0.8;
+        }
+        
+        .game-card:hover .card-image {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* 画像がない場合のプレースホルダー */
+        .no-image-text {
+            position: absolute;
+            color: var(--text-main);
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+
+        /* テキストエリア */
+        .card-content {
+            padding: 20px 15px 0;
+            text-align: center;
+        }
+
+        .game-title {
+            font-size: 1.4rem;
+            color: var(--gold);
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .game-desc {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: var(--text-main);
+            opacity: 0.7;
+            line-height: 1.4;
+        }
+
+        /* 戻るボタン */
+        .back-link {
+            margin-top: 50px;
+            margin-bottom: 30px;
+            color: var(--text-main);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: 0.3s;
+            z-index: 10;
+        }
+        .back-link:hover {
+            color: var(--gold);
+            border-bottom-color: var(--gold);
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="starfield"></canvas>
+    <div class="magic-bg"></div>
+
+    <header>
+        <h1>Arcade of Fate</h1>
+        <p class="subtitle">Choose your destiny</p>
+    </header>
+
+    <div class="game-grid">
+        
+        <a href="/game" class="game-card">
+            <div class="card-image-wrapper">
+                <img src="/assets/icon_zodiac.png" alt="Zodiac" class="card-image" onerror="this.style.display='none'">
+                <span class="no-image-text">♈</span>
+            </div>
+            <div class="card-content">
+                <div class="game-title">Celestial Memory</div>
+                <div class="game-desc">Uncover the stars to read your fortune.</div>
+            </div>
+        </a>
+
+        <a href="/shooting" class="game-card">
+            <div class="card-image-wrapper">
+                <img src="/assets/icon_shooter.png" alt="Shooter" class="card-image" onerror="this.style.display='none'">
+                <span class="no-image-text">⚔️</span>
+            </div>
+            <div class="card-content">
+                <div class="game-title">Sprite Striker</div>
+                <div class="game-desc">Defeat the rogue programs.</div>
+            </div>
+        </a>
+
+        <a href="/slot" class="game-card">
+            <div class="card-image-wrapper">
+                <img src="/assets/icon_slot.png" alt="Slot" class="card-image" onerror="this.style.display='none'">
+                <span class="no-image-text">777</span>
+            </div>
+            <div class="card-content">
+                <div class="game-title">Mystic Slot</div>
+                <div class="game-desc">Test your luck with the golden gaze.</div>
+            </div>
+        </a>
+
+        <a href="/clock" class="game-card">
+            <div class="card-image-wrapper">
+                <img src="/assets/icon_clock.png" alt="Clock" class="card-image" onerror="this.style.display='none'">
+                <span class="no-image-text">⌚</span>
+            </div>
+            <div class="card-content">
+                <div class="game-title">Star Chronometer</div>
+                <div class="game-desc">Observe the flow of astral time.</div>
+            </div>
+        </a>
+
+    </div>
+
+    <a href="/items" class="back-link">Return to Market</a>
+
+    <script>
+        // --- 星空背景 (共通スクリプト) ---
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        const stars = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 1.5;
+                this.alpha = Math.random();
+                this.fade = Math.random() > 0.5 ? 0.005 : -0.005;
+                this.color = Math.random() > 0.9 ? '#d4af37' : '#ffffff';
+            }
+            update() {
+                this.alpha += this.fade;
+                if(this.alpha > 1 || this.alpha < 0.1) this.fade *= -1;
+            }
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initStars() {
+            resize();
+            for(let i=0; i<100; i++) stars.push(new Star());
+            animate();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            stars.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        initStars();
+    </script>
+</body>
+</html>

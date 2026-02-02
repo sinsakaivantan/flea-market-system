@@ -244,4 +244,15 @@ public class UserController {
 	public String showStampCard() {
 	    return "stampcard(geminigatukurimasita)"; // templates/stamp_card.html を表示する
 	}
+	
+	@GetMapping("/geminigame")
+	public String bakaAiGemini() {
+		return "bakaaigemini";
+	}
+	
+	@GetMapping("/slot")
+    public String showSlot() {
+        return "slot"; // templates/slot.html
+    }
+	
 }
