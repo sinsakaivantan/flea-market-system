@@ -30,8 +30,8 @@ public class Ban {
 	
 	private int punish;
 	
-	@Column(name = "endo", nullable = false) // なんかendってposgれの予約後らしい
-    private LocalDateTime end;
+	@Column(name = "end_date", nullable = false)
+	private LocalDateTime end;
 
 	@Column(columnDefinition = "TEXT")
     private String description;

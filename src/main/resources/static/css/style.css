@@ -368,7 +368,7 @@ tr:hover {
 
 .item-card img {
     width: 100%;
-    height: 150px; /* Fixed height for images */
+    aspect-ratio: 1 / 1; /* 正方形に表示 */
     object-fit: cover; /* Cover the area, cropping if necessary */
     border-bottom: 1px solid #eee;
     margin-bottom: 10px;
@@ -378,6 +378,10 @@ tr:hover {
     font-size: 1.1em;
     margin-bottom: 5px;
     color: #2c3e50;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .item-card .price {
@@ -431,7 +435,9 @@ tr:hover {
 
 .item-detail .item-image {
     max-width: 100%;
-    height: auto;
+    width: 100%;
+    aspect-ratio: 1 / 1; /* 正方形に表示 */
+    object-fit: cover; /* Cover the area, cropping if necessary */
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
@@ -446,6 +452,57 @@ tr:hover {
     font-size: 1.5em;
     font-weight: bold;
     color: #007bff;
+}
+
+/* お気に入りハートボタン（Heart-on.png / Heart-off.png） */
+.favorite-heart-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-heart {
+    background: none !important;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    line-height: 0;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+    outline: none;
+}
+
+.btn-heart:hover,
+.btn-heart:focus,
+.btn-heart:active {
+    background: transparent !important;
+    outline: none;
+    border: none;
+}
+
+.btn-heart img.heart-img,
+.btn-heart .heart-img {
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.btn-heart:hover {
+    transform: scale(1.15);
+}
+
+.btn-heart-on:hover {
+    opacity: 0.9;
+}
+
+.btn-heart-off:hover {
+    opacity: 0.85;
+}
+
+.favorite-heart-row .favorite-count {
+    font-size: 0.95em;
+    color: #555;
 }
 
 /* Chat */
@@ -465,6 +522,51 @@ tr:hover {
     border-radius: 15px;
     max-width: 80%;
     word-wrap: break-word;
+}
+
+.chat-message-inner {
+    position: relative;
+}
+
+.chat-message-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+    min-width: 0;
+}
+
+.chat-message .sender-name {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #555;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-message .message-time {
+    font-size: 0.8em;
+    color: #888;
+    flex-shrink: 0;
+}
+
+.chat-message-body {
+    margin: 5px 0 0 0;
+    word-wrap: break-word;
+}
+
+.chat-message-report {
+    margin-top: 6px;
+    text-align: right;
+}
+
+.chat-message-report .report-message-btn {
+    font-size: 12px;
+    padding: 4px 8px;
 }
 
 .my-message {
@@ -488,7 +590,6 @@ tr:hover {
 .message-time {
     font-size: 0.8em;
     color: #888;
-    margin-left: 10px;
 }
 
 .chat-message p {
@@ -913,4 +1014,41 @@ tr:hover {
 .user-follow-list-suffix {
     flex-shrink: 0;
     white-space: nowrap;
+}
+
+/* 出品フォーム：画像プレビュー並べ替え */
+.image-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.preview-item {
+    width: 150px;
+    position: relative;
+}
+
+.preview-item img {
+    pointer-events: none;
+}
+
+.preview-remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(128, 128, 128, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
 }

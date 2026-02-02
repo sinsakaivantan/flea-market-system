@@ -60,4 +60,8 @@ public class FavoriteService {
                 .map(FavoriteItem::getItem)
                 .collect(Collectors.toList());
     }
+
+    public long getFavoriteCountByItem(Item item) {
+        return favoriteItemRepository.countByItem(item);
+    }
 }

@@ -11,4 +11,6 @@ public interface UserComplaintRepository extends JpaRepository<UserComplaint, Lo
 	long countByReportedUserId(Long reportedUserId);
 
 	List<UserComplaint> findByReportedUserIdOrderByCreatedAtDesc(Long reportedUserId);
+
+	List<UserComplaint> findAllByOrderByCreatedAtDesc();
 }

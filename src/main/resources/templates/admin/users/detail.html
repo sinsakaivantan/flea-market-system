@@ -86,15 +86,27 @@
 
   <section class="card">
     <p><strong>ID:</strong> <span th:text="${user.id}"></span></p>
-    <p><strong>名前:</strong> <span th:text="${user.name}"></span></p>
+    <p><strong>名前:</strong> <span th:text="${user.name}"></span>
+      <a th:href="@{/users/{id}(id=${user.id})}" class="button secondary" style="margin-left: 12px;">このユーザーのページを見る</a>
+    </p>
     <p><strong>メール:</strong> <span th:text="${user.email}"></span></p>
     <p><strong>ロール:</strong> <span th:text="${user.role}"></span></p>
     <p><strong>有効:</strong> <span th:text="${user.enabled}"></span></p>
     <p><strong>BAN:</strong> <span th:text="${user.banned}"></span></p>
+    <p><strong>トラスト値:</strong> <span th:text="${user.trust}"></span></p>
+    <p><strong>パニッシュ値:</strong> <span th:text="${lastPunish} ?: '-'"></span></p>
     <p><strong>平均評価:</strong> <span th:text="${avgRating}"></span></p>
-    <p><strong>通報数:</strong> <span th:text="${complaintCount}"></span></p>
+    <p><strong>通報数:</strong> <span th:text="${complaintCount}"></span>
+      <th:block th:if="${complaintCount > 0}">
+        <form th:action="@{/admin/users/complaints}" method="get" style="display:inline;">
+          <input type="hidden" name="reportedUserId" th:value="${user.id}"/>
+          <button type="submit" class="button">通報一覧</button>
+        </form>
+      </th:block>
+    </p>
 	<p><strong>一時利用停止:</strong> <span th:text="${aaaaa}"></span></p>
   </section>
+
   <section class="actions">
       <!-- 開くボタン -->
       <button type="button" class="open-btn" id="openForm">理由:</button>
@@ -145,8 +157,8 @@
 <div class="overlay" id="overlay">
     <div class="form-container">
         <button class="close-btn" id="closeForm">×</button>
-
-        <table>
+        <h3 style="margin-top: 0;">罰の履歴</h3>
+        <table th:if="${rireki != null and !rireki.isEmpty()}">
             <thead>
                 <tr>
                     <th>内容</th>
@@ -158,10 +170,11 @@
                 <tr th:each="ad : ${rireki}">
                     <td th:text="${ad.description}"></td>
                     <td th:text="${ad.punish}"></td>
-                    <td th:text="${ad.end}"></td>
+                    <td th:text="${ad.end != null ? #temporals.format(ad.end, 'yyyy/MM/dd HH:mm') : '-'}"></td>
                 </tr>
             </tbody>
         </table>
+        <p th:if="${rireki == null or rireki.isEmpty()}" style="color: #666; margin: 20px 0;">罰の履歴がありません。</p>
     </div>
 </div>
 <script>
@@ -169,17 +182,12 @@
 	        const overlay = document.getElementById('overlay');
 	        const closeBtn = document.getElementById('closeForm');
 
-	        // 開く
 	        openBtn.onclick = function() {
 	            overlay.style.display = 'flex';
 	        };
-
-	        // 閉じる（❌ボタン）
 	        closeBtn.onclick = function() {
 	            overlay.style.display = 'none';
 	        };
-
-	        // オーバーレイの背景クリックでも閉じる（任意で追加）
 	        overlay.onclick = function(e) {
 	            if (e.target === overlay) {
 	                overlay.style.display = 'none';

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.fleamarketsystem.entity.Review;
 import com.example.fleamarketsystem.entity.User;
@@ -33,10 +34,21 @@ public class UserDetailController {
 		this.followService = followService;
 	}
 
+	private boolean isAdmin(UserDetails userDetails) {
+		return userDetails != null && userDetails.getAuthorities().stream()
+				.anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+	}
+
 	@GetMapping("/users/{id}")
-	public String userDetail(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails, Model model) {
+	public String userDetail(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails, Model model,
+			RedirectAttributes redirectAttributes) {
 		User targetUser = userService.getUserById(id)
 				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		if (targetUser.isBanned() && !isAdmin(userDetails)) {
+			redirectAttributes.addFlashAttribute("errorMessage", "このページは表示できません。");
+			return "redirect:/items";
+		}
 
 		long followingCount = followService.getFollowingCount(targetUser);
 		long followerCount = followService.getFollowerCount(targetUser);
@@ -84,9 +96,15 @@ public class UserDetailController {
 	}
 
 	@GetMapping("/users/{id}/followlist")
-	public String userFollowList(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails, Model model) {
+	public String userFollowList(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails, Model model,
+			RedirectAttributes redirectAttributes) {
 		User targetUser = userService.getUserById(id)
 				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		if (targetUser.isBanned() && !isAdmin(userDetails)) {
+			redirectAttributes.addFlashAttribute("errorMessage", "このページは表示できません。");
+			return "redirect:/items";
+		}
 
 		java.util.List<User> followingUsers = followService.getFollowingUsers(targetUser);
 		java.util.Map<Long, Boolean> followingStatusMap = new java.util.HashMap<>();
@@ -107,9 +125,15 @@ public class UserDetailController {
 	}
 
 	@GetMapping("/users/{id}/followers")
-	public String userFollowersList(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails, Model model) {
+	public String userFollowersList(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails, Model model,
+			RedirectAttributes redirectAttributes) {
 		User targetUser = userService.getUserById(id)
 				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		if (targetUser.isBanned() && !isAdmin(userDetails)) {
+			redirectAttributes.addFlashAttribute("errorMessage", "このページは表示できません。");
+			return "redirect:/items";
+		}
 
 		java.util.List<User> followerUsers = followService.getFollowerUsers(targetUser);
 		java.util.Map<Long, Boolean> followingStatusMap = new java.util.HashMap<>();

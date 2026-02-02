@@ -28,17 +28,18 @@ public class CustomUserDetailsService implements UserDetailsService {
 		// usernameParameter("email") にしているので username はメール
 		User u = users.findByEmailIgnoreCase(username)
 				.orElseThrow(() -> {
-					log.error("User not found: {}", username);
+					log.debug("User not found: {}", username);
 					return new UsernameNotFoundException("User not found: " + username);
 				});
 
-		if (!u.isEnabled()) {
-			log.warn("Account disabled for user: {}", username);
-			throw new DisabledException("Account disabled");
-		}
+		// BAN（永久停止）を先に判定し、ログは出さず専用ページへ誘導する
 		if (u.isBanned()) {
-			log.warn("Account banned for user: {}", username);
+			log.debug("Account banned for user: {}", username);
 			throw new DisabledException("Account banned");
+		}
+		if (!u.isEnabled()) {
+			log.debug("Account disabled for user: {}", username);
+			throw new DisabledException("Account disabled");
 		}
 
 		return new org.springframework.security.core.userdetails.User(

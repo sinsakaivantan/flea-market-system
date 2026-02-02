@@ -8,6 +8,12 @@
 <main class="container">
   <h1>ユーザー管理</h1>
 
+  <p style="margin: 10px 0;">
+    <form th:action="@{/admin/users/complaints}" method="get" style="display:inline;">
+      <button type="submit" class="button">通報一覧</button>
+    </form>
+  </p>
+
   <form method="get" class="toolbar">
     <input type="text" name="q" th:value="${q}" placeholder="検索（名前/メール）">
     <select name="sort">

@@ -30,11 +30,21 @@
         const paymentElement = elements.create('payment');
         paymentElement.mount('#payment-element');
 
-        const form = document.getElementById('submit');
+        const submitBtn = document.getElementById('submit');
         const messageContainer = document.getElementById('payment-message');
+        let isSubmitting = false;
 
-        form.addEventListener('click', async (e) => {
+        submitBtn.addEventListener('click', async (e) => {
             e.preventDefault();
+            if (isSubmitting) {
+                return;
+            }
+            isSubmitting = true;
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '処理中...';
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
 
             const { error } = await stripe.confirmPayment({
                 elements,
@@ -45,13 +55,18 @@
             });
 
             if (error) {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
                 if (error.type === "card_error" || error.type === "validation_error") {
                     messageContainer.textContent = error.message;
                 } else {
                     messageContainer.textContent = "予期せぬエラーが発生しました。";
                 }
             } else {
-                // Payment succeeded on client side, now confirm on server
+                // Payment succeeded on client side, now confirm on server（画面遷移するまでボタンは押せないまま）
                 const paymentIntentId = clientSecret.split('_')[0] + '_' + clientSecret.split('_')[1];
                 window.location.href = '/orders/complete-purchase?paymentIntentId=' + paymentIntentId;
             }

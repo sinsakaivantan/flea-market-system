@@ -15,8 +15,11 @@ public class LoginController {
 		return "login"; // templates/login.html
 	}
 	@GetMapping("/banned")
-    public String banned(@RequestParam(required = false) String reason, Model model) {
-        model.addAttribute("reason", reason != null ? URLDecoder.decode(reason, StandardCharsets.UTF_8) : "BANされています。");
-        return "banned";  // banned.html テンプレート
-    }
+	public String banned(@RequestParam(required = false) String reason,
+			@RequestParam(value = "permanent", required = false) String permanent, Model model) {
+		boolean isPermanent = "1".equals(permanent);
+		model.addAttribute("permanent", isPermanent);
+		model.addAttribute("reason", reason != null ? URLDecoder.decode(reason, StandardCharsets.UTF_8) : null);
+		return "banned";
+	}
 }

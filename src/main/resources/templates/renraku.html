@@ -15,6 +15,7 @@
 			    </style>
 </head>
 <body>
+    <header th:insert="~{fragments/layout :: header}"></header>
     <div class="container">
         <h1>aaaa</h1>
         <p>ようこそ、<span sec:authentication="name"></span>さん！ (管理者)</p>

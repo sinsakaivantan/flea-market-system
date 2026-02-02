@@ -18,7 +18,16 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.example.fleamarketsystem.entity.Ban;
 import com.example.fleamarketsystem.entity.User;
@@ -67,16 +76,46 @@ public class SecurityConfig {
 						.loginPage("/login")
 						.usernameParameter("username")  // メールアドレスを使用
 						.passwordParameter("password")
-						.successHandler(customSuccessHandler()) 
-						//.defaultSuccessUrl("/items", true) // ログイン成功後
+						.successHandler(customSuccessHandler())
+						.failureHandler(customFailureHandler())
 						.permitAll())
 				.logout(logout -> logout
 						.logoutUrl("/logout") // POST /logout
 						.logoutSuccessUrl("/login?logout")
 						.permitAll())
-				.csrf(Customizer.withDefaults());
+				.csrf(Customizer.withDefaults())
+				.addFilterBefore(bannedUserRedirectFilter(), UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
+	}
+
+	/** BAN（永久停止）ユーザーがログイン試行したら認証前に /banned?permanent=1 へリダイレクトし、ログを出さない */
+	@Bean
+	public OncePerRequestFilter bannedUserRedirectFilter() {
+		return new OncePerRequestFilter() {
+			@Override
+			protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+					FilterChain filterChain) throws java.io.IOException, ServletException {
+				if ("POST".equalsIgnoreCase(request.getMethod()) && "/login".equals(request.getRequestURI())) {
+					String username = request.getParameter("username");
+					if (username != null && !username.isBlank()) {
+						userRepository.findByEmailIgnoreCase(username).ifPresent(u -> {
+							if (u.isBanned()) {
+								try {
+									response.sendRedirect("/banned?permanent=1");
+								} catch (java.io.IOException e) {
+									throw new RuntimeException(e);
+								}
+							}
+						});
+						if (response.isCommitted()) {
+							return;
+						}
+					}
+				}
+				filterChain.doFilter(request, response);
+			}
+		};
 	}
 	//これ一時利用停止されてるかどうかのチェックね。
 	private AuthenticationSuccessHandler customSuccessHandler() {
@@ -99,4 +138,22 @@ public class SecurityConfig {
             response.sendRedirect("/items");
         };
     }
+
+	/** BAN（永久停止）ユーザーは /banned?permanent=1 へ誘導し、スタックトレースを出さない */
+	@Bean
+	public AuthenticationFailureHandler customFailureHandler() {
+		return new SimpleUrlAuthenticationFailureHandler("/login?error") {
+			@Override
+			public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+					org.springframework.security.core.AuthenticationException exception)
+					throws java.io.IOException, jakarta.servlet.ServletException {
+				if (exception instanceof org.springframework.security.authentication.DisabledException
+						&& "Account banned".equals(exception.getMessage())) {
+					response.sendRedirect("/banned?permanent=1");
+					return;
+				}
+				super.onAuthenticationFailure(request, response, exception);
+			}
+		};
+	}
 }

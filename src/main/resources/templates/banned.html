@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head><title>BANされています</title></head>
+<head><title>アカウント停止</title></head>
 <body>
-    <h1>アカウントが一時停止されています</h1>
-    <p th:text="${reason}"></p>
-    <p>解除されるまでお待ちください。</p>
+    <div th:if="${permanent}">
+        <h1>お客様のアカウントは永久停止されています。</h1>
+        <p>このアカウントではログインできません。</p>
+    </div>
+    <div th:unless="${permanent}">
+        <h1>アカウントが一時停止されています</h1>
+        <p th:if="${reason}" th:text="${reason}"></p>
+        <p>解除されるまでお待ちください。</p>
+    </div>
     <a href="/login">ログインページに戻る</a>
 </body>
 </html>

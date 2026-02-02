@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+	<head th:replace="~{fragments/layout :: head('通報一覧')}"></head>
+	<body>
+	  <header th:insert="~{fragments/layout :: header}"></header>
+
+<main class="container">
+  <h1>通報一覧</h1>
+  <hr>
+
+  <p style="margin: 10px 0;">
+    <a th:if="${detailUser != null}" th:href="@{/admin/users/{id}(id=${detailUser.id})}" class="button">ユーザー詳細に戻る</a>
+    <a th:if="${detailUser == null}" th:href="@{/admin/users}" class="button">ユーザー管理に戻る</a>
+  </p>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>日時</th>
+        <th>通報した人</th>
+        <th>通報された人</th>
+        <th>通報内容</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="c : ${complaints}">
+        <td th:text="${#temporals.format(c.createdAt, 'yyyy/MM/dd HH:mm')}"></td>
+        <td>
+          <span th:text="${userMap[c.reporterUserId] != null ? userMap[c.reporterUserId].name : '(不明)'}"></span>
+        </td>
+        <td>
+          <a th:href="@{/admin/users/{id}(id=${c.reportedUserId})}" th:text="${userMap[c.reportedUserId] != null ? userMap[c.reportedUserId].name : '(不明)'}"></a>
+        </td>
+        <td th:text="${c.reason}"></td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(complaints)}">
+        <td colspan="4">通報はありません。</td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>

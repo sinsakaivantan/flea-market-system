@@ -10,18 +10,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.fleamarketsystem.entity.User;
 import com.example.fleamarketsystem.entity.UserComplaint;
+import com.example.fleamarketsystem.repository.FavoriteItemRepository;
+import com.example.fleamarketsystem.repository.FollowRepository;
 import com.example.fleamarketsystem.repository.UserComplaintRepository;
 import com.example.fleamarketsystem.repository.UserRepository;
+import com.example.fleamarketsystem.service.EmailService;
 
 @Service
 public class AdminUserService {
 
 	private final UserRepository userRepository;
 	private final UserComplaintRepository complaintRepository;
+	private final FollowRepository followRepository;
+	private final FavoriteItemRepository favoriteItemRepository;
+	private final EmailService emailService;
 
-	public AdminUserService(UserRepository userRepository, UserComplaintRepository complaintRepository) {
+	public AdminUserService(UserRepository userRepository, UserComplaintRepository complaintRepository,
+			FollowRepository followRepository, FavoriteItemRepository favoriteItemRepository,
+			EmailService emailService) {
 		this.userRepository = userRepository;
 		this.complaintRepository = complaintRepository;
+		this.followRepository = followRepository;
+		this.favoriteItemRepository = favoriteItemRepository;
+		this.emailService = emailService;
 	}
 
 	public List<User> listAllUsers() {
@@ -46,6 +57,10 @@ public class AdminUserService {
 		return complaintRepository.findByReportedUserIdOrderByCreatedAtDesc(userId);
 	}
 
+	public List<UserComplaint> getAllComplaintsOrderByCreatedAtDesc() {
+		return complaintRepository.findAllByOrderByCreatedAtDesc();
+	}
+
 	@Transactional
 	public void banUser(Long targetUserId, Long adminUserId, String reason, boolean alsoDisableLogin) {
 		User u = findUser(targetUserId);
@@ -56,6 +71,17 @@ public class AdminUserService {
 		if (alsoDisableLogin)
 			u.setEnabled(false);
 		userRepository.save(u);
+		// BANされたユーザーのフォロー・フォロワーを削除
+		followRepository.deleteByFollower(u);
+		followRepository.deleteByFollowing(u);
+		// BANされたユーザーの商品につけられているお気に入りを全て削除
+		favoriteItemRepository.deleteByItem_Seller(u);
+		// BANされたユーザーにメールで通知
+		String subject = "【フリマ】アカウントが停止されました";
+		String body = u.getName() + " 様\n\n"
+				+ "お客様のアカウントは運営により無期限アカウント停止となりました。\n\n"
+				+ "【停止理由】\n" + (reason != null ? reason : "");
+		emailService.sendEmail(u.getEmail(), subject, body);
 	}
 
 	@Transactional
