@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.example.fleamarketsystem.entity.UserComplaint;
-
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -27,6 +25,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.fleamarketsystem.entity.Ban;
 import com.example.fleamarketsystem.entity.User;
+import com.example.fleamarketsystem.entity.UserComplaint;
 import com.example.fleamarketsystem.repository.AdminRepository;
 import com.example.fleamarketsystem.repository.BanRepository;
 import com.example.fleamarketsystem.repository.UserRepository;
@@ -86,12 +85,15 @@ public class AdminUserController {
 			Model model) {
 		List<UserComplaint> list = service.getAllComplaintsOrderByCreatedAtDesc();
 		if (reportedUserId != null) {
-			list = list.stream().filter(c -> reportedUserId.equals(c.getReportedUserId())).toList();
+		    list = list.stream()
+		               .filter(c -> reportedUserId.equals(c.getReportedUserId().getId()))
+		               .toList();
 		}
+
 		Set<Long> userIds = new HashSet<>();
 		for (UserComplaint c : list) {
-			userIds.add(c.getReporterUserId());
-			userIds.add(c.getReportedUserId());
+			userIds.add(c.getReporterUserId().getId());
+			userIds.add(c.getReportedUserId().getId());
 		}
 		Map<Long, User> userMap = new HashMap<>();
 		for (Long id : userIds) {
@@ -111,7 +113,7 @@ public class AdminUserController {
 	public String detail(@PathVariable Long id, Model model) {
 		User user = service.findUser(id);
 		Double avg = service.averageRating(id);
-		long complaints = service.complaintCount(id);
+		long complaints = service.complaintCount(user);
 		List<Ban> aiueo = banRepository.findAllByUserId(user);
 		if (aiueo == null) {
 			aiueo = java.util.Collections.emptyList();
@@ -134,10 +136,10 @@ public class AdminUserController {
 			model.addAttribute("aaaaa", "通常");
 			model.addAttribute("lastPunish", null);
 		}
-		List<UserComplaint> complaintList = service.complaints(id);
+		List<UserComplaint> complaintList = service.complaints(user);
 		Set<Long> reporterIds = new HashSet<>();
 		for (UserComplaint c : complaintList) {
-			reporterIds.add(c.getReporterUserId());
+			reporterIds.add(c.getReporterUserId().getId());
 		}
 		Map<Long, User> reporterMap = new HashMap<>();
 		for (Long rid : reporterIds) {

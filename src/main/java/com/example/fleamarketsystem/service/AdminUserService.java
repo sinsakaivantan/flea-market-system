@@ -14,7 +14,6 @@ import com.example.fleamarketsystem.repository.FavoriteItemRepository;
 import com.example.fleamarketsystem.repository.FollowRepository;
 import com.example.fleamarketsystem.repository.UserComplaintRepository;
 import com.example.fleamarketsystem.repository.UserRepository;
-import com.example.fleamarketsystem.service.EmailService;
 
 @Service
 public class AdminUserService {
@@ -49,11 +48,11 @@ public class AdminUserService {
 		return (avg == null) ? 0.0 : avg;
 	}
 
-	public long complaintCount(Long userId) {
+	public long complaintCount(User userId) {
 		return complaintRepository.countByReportedUserId(userId);
 	}
 
-	public List<UserComplaint> complaints(Long userId) {
+	public List<UserComplaint> complaints(User userId) {
 		return complaintRepository.findByReportedUserIdOrderByCreatedAtDesc(userId);
 	}
 

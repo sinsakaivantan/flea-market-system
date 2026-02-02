@@ -20,7 +20,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.fleamarketsystem.entity.Admin;
 import com.example.fleamarketsystem.entity.Item;
+import com.example.fleamarketsystem.entity.UserComplaint;
 import com.example.fleamarketsystem.repository.AdminRepository;
+import com.example.fleamarketsystem.repository.UserComplaintRepository;
 import com.example.fleamarketsystem.service.AppOrderService;
 import com.example.fleamarketsystem.service.EmailService;
 import com.example.fleamarketsystem.service.ItemService;
@@ -34,19 +36,20 @@ import jakarta.servlet.http.HttpServletResponse;
 public class AdminController {
 
     private final AdminRepository adminRepository;
-
+    private final UserComplaintRepository ppap;
 	private final ItemService itemService;
 	private final AppOrderService appOrderService;
 	private final RenrakuService renrakuService;
 	private final EmailService emailService;
 
 	public AdminController(ItemService itemService, AppOrderService appOrderService, RenrakuService renrakuService,
-			AdminRepository adminRepository, EmailService emailService) {
+			AdminRepository adminRepository, EmailService emailService,UserComplaintRepository ppap) {
 		this.itemService = itemService;
 		this.appOrderService = appOrderService;
 		this.renrakuService = renrakuService;
 		this.adminRepository = adminRepository;
 		this.emailService = emailService;
+		this.ppap = ppap;
 	}
 
 	@GetMapping("/items")
@@ -61,6 +64,12 @@ public class AdminController {
 		return "renraku";
 	}
 	
+	@GetMapping("/tuuhou")
+	public String tuuhou(Model model) {
+		model.addAttribute("tu",renrakuService.getAllUserComplaints());
+		return "tuu";
+	}
+	
 	@PostMapping("/{ad}/sikibetu")
 	@ResponseBody  
 	public Map<String, Object> sikibetu(@PathVariable("ad") Admin aiu) {
@@ -69,6 +78,21 @@ public class AdminController {
 	    
 	    aiu.setSikibetu(newValue);
 	    adminRepository.save(aiu);
+	    Map<String, Object> response = new HashMap<>();
+	    response.put("success", true);
+	    response.put("newSikibetu", newValue);
+	    
+	    return response;
+	}
+	
+	@PostMapping("/{ad}/sikibe2")
+	@ResponseBody  
+	public Map<String, Object> sikibe2(@PathVariable("ad") UserComplaint aio) {
+	    Integer current = aio.getSikibetu();
+	    int newValue = (current == 0) ? 1 : 0;
+	    
+	    aio.setSikibetu(newValue);
+	    ppap.save(aio);
 	    Map<String, Object> response = new HashMap<>();
 	    response.put("success", true);
 	    response.put("newSikibetu", newValue);

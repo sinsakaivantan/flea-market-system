@@ -37,9 +37,11 @@ public class ReportController {
 			redirectAttributes.addFlashAttribute("errorMessage", "ログインしてください。");
 			return "redirect:/login";
 		}
+		User reported = userService.getUserById(reportedUserId)
+				.orElse(null);
 		UserComplaint complaint = new UserComplaint();
-		complaint.setReportedUserId(reportedUserId);
-		complaint.setReporterUserId(reporter.getId());
+		complaint.setReportedUserId(reported);
+		complaint.setReporterUserId(reporter);
 		complaint.setReason(description != null ? description : "");
 		reportService.saveUserComplaint(complaint);
 		redirectAttributes.addFlashAttribute("successMessage", "通報を受け付けました。");

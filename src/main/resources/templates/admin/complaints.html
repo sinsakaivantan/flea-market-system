@@ -25,12 +25,16 @@
     <tbody>
       <tr th:each="c : ${complaints}">
         <td th:text="${#temporals.format(c.createdAt, 'yyyy/MM/dd HH:mm')}"></td>
-        <td>
-          <span th:text="${userMap[c.reporterUserId] != null ? userMap[c.reporterUserId].name : '(不明)'}"></span>
-        </td>
-        <td>
-          <a th:href="@{/admin/users/{id}(id=${c.reportedUserId})}" th:text="${userMap[c.reportedUserId] != null ? userMap[c.reportedUserId].name : '(不明)'}"></a>
-        </td>
+		<td>
+		  <span th:text="${userMap[c.reporterUserId.id] != null ? userMap[c.reporterUserId.id].name : '(不明)'}"></span>
+		</td>
+
+		<td>
+		  <a th:href="@{/admin/users/{id}(id=${c.reportedUserId.id})}"
+		     th:text="${userMap[c.reportedUserId.id] != null ? userMap[c.reportedUserId.id].name : '(不明)'}">
+		  </a>
+		</td>
+
         <td th:text="${c.reason}"></td>
       </tr>
       <tr th:if="${#lists.isEmpty(complaints)}">

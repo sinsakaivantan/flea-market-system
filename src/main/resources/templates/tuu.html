@@ -12,7 +12,7 @@
             white-space: nowrap;       
             text-align: center;
         }
-
+        
         /* ▼▼▼ 追加したスタイル ▼▼▼ */
         .wrap-text {
             white-space: pre-wrap;  /* 改行を維持して折り返す */
@@ -40,23 +40,23 @@
             <thead>
                 <tr>
                     <th>対象者</th>
-                    <th>内容</th>
+                    <th>通報者</th>
                     <th>テキスト</th>
                     <th>時間</th>
                     <th>行動</th>
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="ad : ${admin}">
-                    <td th:text="${ad.userId.name}"></td>
-                    <td th:text="${ad.action}"></td>
+                <tr th:each="ad : ${tu}">
+                    <td th:text="${ad.reportedUserId.name}"></td>
+                    <td th:text="${ad.reporterUserId.name}"></td>
                     
-                    <td th:text="${ad.description}" class="wrap-text"></td>
+                    <td th:text="${ad.reason}" class="wrap-text"></td>
                     
-                    <td th:text="${ad.time}"></td>
+                    <td th:text="${ad.createdAt}"></td>
                     <td>
                         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-                        <form th:action="@{|/admin/${ad.id}/sikibetu|}" method="post" class="sikibetu-form">
+                        <form th:action="@{|/admin/${ad.id}/sikibe2|}" method="post" class="sikibetu-form">
                             <button type="submit" class="button sikibetu-btn" 
                                     th:attr="data-current=${ad.sikibetu}"  
                                     th:style="'background-color: ' + ${ad.sikibetu == 1 ? '#dc3545' : '#28a745'}">
