@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>残念です</title></head>
+<body>
+    <h1>追放されてます　さようなら</h1>
+    <a href="/login">ログインページに戻る</a>
+	<form th:action="@{|/igimousitate/${us.id}|}" method="post">
+		<label for="description">何かあれば書いてくださいね:</label>
+		<input type="text" id="description" name="description">
+		<button type="submit" class="button">異議申し立て</button>
+				</form>
+</body>
+</html>

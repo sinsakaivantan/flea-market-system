@@ -7,153 +7,108 @@ import java.util.Optional;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.context.SecurityContextHolder; // 追加
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 import com.example.fleamarketsystem.entity.Ban;
 import com.example.fleamarketsystem.entity.User;
 import com.example.fleamarketsystem.repository.BanRepository;
 import com.example.fleamarketsystem.repository.UserRepository;
+import com.example.fleamarketsystem.security.MfaAuthorizationManager;
+import com.example.fleamarketsystem.service.LoginStampService;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
-@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	private final UserDetailsService userDetailsService;
-	private final BanRepository banRepository; 
-	private final UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final BanRepository banRepository; 
+    private final MfaAuthorizationManager mfaAuthorizationManager;
+    private final LoginStampService loginStampService;
 
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
 
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		// {bcrypt},{noop} など委譲エンコーダ
-		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-	}
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/login", "/register", "/css/**", "/js/**", "/error",
+                    "/banned", "/a", "/igimousitate/**" 
+                ).permitAll()
+                .requestMatchers("/mfa/**").authenticated()
+                .requestMatchers("/admin/**").access((authentication, context) -> {
+                    boolean isAdmin = authentication.get().getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                    if (!isAdmin) return new AuthorizationDecision(false);
+                    return mfaAuthorizationManager.authorize(authentication, context);
+                })
+                .anyRequest().access(mfaAuthorizationManager)
+            )
+            .formLogin(form -> form
+                .loginPage("/login")
+                .usernameParameter("username")
+                .passwordParameter("password")
+                .successHandler(customSuccessHandler())
+                .permitAll()
+            )
+            .exceptionHandling(ex -> ex
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.sendRedirect("/mfa/verify");
+                })
+            );
+        return http.build();
+    }
+    private AuthenticationSuccessHandler customSuccessHandler() {
 
-	@Bean
-	public AuthenticationManager authenticationManager() {
-		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-		authProvider.setUserDetailsService(userDetailsService);
-		authProvider.setPasswordEncoder(passwordEncoder());
-		return new ProviderManager(authProvider);
-	}
-
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(
-								"/login",
-								"/register",
-								"/css/**", "/js/**", "/images/**", "/webjars/**",
-								"/banned")
-						.permitAll()
-						.requestMatchers("/admin/**").hasRole("ADMIN")
-						.anyRequest().authenticated())
-				.formLogin(form -> form
-						.loginPage("/login")
-						.usernameParameter("username")  // メールアドレスを使用
-						.passwordParameter("password")
-						.successHandler(customSuccessHandler())
-						.failureHandler(customFailureHandler())
-						.permitAll())
-				.logout(logout -> logout
-						.logoutUrl("/logout") // POST /logout
-						.logoutSuccessUrl("/login?logout")
-						.permitAll())
-				.csrf(Customizer.withDefaults())
-				.addFilterBefore(bannedUserRedirectFilter(), UsernamePasswordAuthenticationFilter.class);
-
-		return http.build();
-	}
-
-	/** BAN（永久停止）ユーザーがログイン試行したら認証前に /banned?permanent=1 へリダイレクトし、ログを出さない */
-	@Bean
-	public OncePerRequestFilter bannedUserRedirectFilter() {
-		return new OncePerRequestFilter() {
-			@Override
-			protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-					FilterChain filterChain) throws java.io.IOException, ServletException {
-				if ("POST".equalsIgnoreCase(request.getMethod()) && "/login".equals(request.getRequestURI())) {
-					String username = request.getParameter("username");
-					if (username != null && !username.isBlank()) {
-						userRepository.findByEmailIgnoreCase(username).ifPresent(u -> {
-							if (u.isBanned()) {
-								try {
-									response.sendRedirect("/banned?permanent=1");
-								} catch (java.io.IOException e) {
-									throw new RuntimeException(e);
-								}
-							}
-						});
-						if (response.isCommitted()) {
-							return;
-						}
-					}
-				}
-				filterChain.doFilter(request, response);
-			}
-		};
-	}
-	//これ一時利用停止されてるかどうかのチェックね。
-	private AuthenticationSuccessHandler customSuccessHandler() {
         return (request, response, authentication) -> {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String username = userDetails.getUsername();
-            User uo = userRepository.findByEmail(username)
-            		.orElseThrow(() -> new IllegalStateException("No order found for payment intent: " ));
-            Optional<Ban> banOpt = banRepository.findTopByUserIdOrderByEndDesc(uo);
+            String username = authentication.getName();
+            User user = userRepository.findByEmail(username).orElseThrow();
+            HttpSession session = request.getSession();
+            if (user.isBanned()) {
+                session.setAttribute("aoaoa", user);
+                SecurityContextHolder.clearContext();
+                session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+                
+                response.sendRedirect("/a");
+                return;
+            }
+            Optional<Ban> banOpt = banRepository.findTopByUserIdOrderByEndDesc(user);
             if (banOpt.isPresent()) {
                 Ban ban = banOpt.get();
                 LocalDateTime now = LocalDateTime.now();
-
-                if (now.isBefore(ban.getEnd()) || now.isEqual(ban.getEnd())) {
-                    String reason = URLEncoder.encode("アカウントが一時停止中です。解除日時: " + ban.getEnd(), StandardCharsets.UTF_8);
+                if (now.isBefore(ban.getEnd())) {
+                    session.setAttribute("aoaoa", user);
+                    SecurityContextHolder.clearContext();
+                    session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+                    
+                    String reason = URLEncoder.encode("解除日時: " + ban.getEnd(), StandardCharsets.UTF_8);
                     response.sendRedirect("/banned?reason=" + reason);
                     return;
                 }
             }
-            response.sendRedirect("/items");
+            loginStampService.recordLogin(user);
+            if (user.isMfaEnabled()) {
+                response.sendRedirect("/mfa/verify");
+            } else {
+                response.sendRedirect("/items");
+            }
         };
     }
-
-	/** BAN（永久停止）ユーザーは /banned?permanent=1 へ誘導し、スタックトレースを出さない */
-	@Bean
-	public AuthenticationFailureHandler customFailureHandler() {
-		return new SimpleUrlAuthenticationFailureHandler("/login?error") {
-			@Override
-			public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
-					org.springframework.security.core.AuthenticationException exception)
-					throws java.io.IOException, jakarta.servlet.ServletException {
-				if (exception instanceof org.springframework.security.authentication.DisabledException
-						&& "Account banned".equals(exception.getMessage())) {
-					response.sendRedirect("/banned?permanent=1");
-					return;
-				}
-				super.onAuthenticationFailure(request, response, exception);
-			}
-		};
-	}
 }
+

@@ -31,16 +31,15 @@ public class CustomUserDetailsService implements UserDetailsService {
 					log.debug("User not found: {}", username);
 					return new UsernameNotFoundException("User not found: " + username);
 				});
-
-		// BAN（永久停止）を先に判定し、ログは出さず専用ページへ誘導する
-		if (u.isBanned()) {
-			log.debug("Account banned for user: {}", username);
-			throw new DisabledException("Account banned");
-		}
 		if (!u.isEnabled()) {
-			log.debug("Account disabled for user: {}", username);
+			log.warn("Account disabled for user: {}", username);
 			throw new DisabledException("Account disabled");
 		}
+		/*if (u.isBanned()) {
+			log.warn("Account banned for user: {}", username);
+			throw new DisabledException("Account banned");
+		}*/
+
 
 		return new org.springframework.security.core.userdetails.User(
 				u.getEmail(),

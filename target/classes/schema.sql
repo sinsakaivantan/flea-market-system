@@ -1,8 +1,3 @@
--- ========== CLEAN DROP (依存順) ==========
--- 警告: このDROP文は本番環境では実行しないでください！
--- データベースの全データが削除されます。
--- 開発時のみ、手動で実行してください。
--- 
 -- DROP TABLE IF EXISTS chat CASCADE;
 -- DROP TABLE IF EXISTS favorite_item CASCADE;
 -- DROP TABLE IF EXISTS review CASCADE;
@@ -10,6 +5,7 @@
 -- DROP TABLE IF EXISTS item CASCADE;
 -- DROP TABLE IF EXISTS category CASCADE;
 -- DROP TABLE IF EXISTS user_complaint CASCADE;
+-- DROP TABLE IF EXISTS follows CASCADE;
 -- DROP TABLE IF EXISTS users CASCADE;
 
 -- ========== CREATE ==========
@@ -26,7 +22,8 @@ CREATE TABLE users (
   banned BOOLEAN NOT NULL DEFAULT FALSE,
   ban_reason TEXT,
   banned_at TIMESTAMP,
-  banned_by_admin_id INT
+  banned_by_admin_id INT,
+  profile_image_url TEXT
 );
 
 CREATE TABLE category (
@@ -105,6 +102,16 @@ CREATE TABLE user_complaint (
   FOREIGN KEY (reporter_user_id) REFERENCES users(id)
 );
 
+CREATE TABLE follows (
+  id SERIAL PRIMARY KEY,
+  follower_id INT NOT NULL,
+  following_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (follower_id) REFERENCES users(id),
+  FOREIGN KEY (following_id) REFERENCES users(id),
+  UNIQUE (follower_id, following_id)
+);
+
 -- ========== INDEX ==========
 CREATE INDEX IF NOT EXISTS idx_users_banned           ON users(banned);
 CREATE INDEX IF NOT EXISTS idx_users_banned_by        ON users(banned_by_admin_id);
@@ -126,3 +133,6 @@ CREATE INDEX IF NOT EXISTS idx_review_order_id        ON review(order_id);
 
 CREATE INDEX IF NOT EXISTS idx_uc_reported            ON user_complaint(reported_user_id);
 CREATE INDEX IF NOT EXISTS idx_uc_reporter            ON user_complaint(reporter_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_follows_follower       ON follows(follower_id);
+CREATE INDEX IF NOT EXISTS idx_follows_following      ON follows(following_id);

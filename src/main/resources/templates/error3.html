@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FATAL SYSTEM ERROR</title>
+    <style>
+        :root {
+            --danger-red: #ff0000;
+            --dark-red: #300000;
+            --black: #000000;
+        }
+
+        body {
+            background-color: var(--black);
+            color: var(--danger-red);
+            font-family: 'Courier New', Courier, monospace;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            /* 画面全体の激しい明滅 */
+            animation: bg-flash 0.2s infinite;
+        }
+
+        @keyframes bg-flash {
+            0% { background-color: var(--black); }
+            50% { background-color: #1a0000; }
+            51% { background-color: #300000; }
+            100% { background-color: var(--black); }
+        }
+
+        /* 走査線エフェクト */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,0,0,0), rgba(255,0,0,0) 50%, rgba(255,0,0,0.2) 50%, rgba(255,0,0,0.2));
+            background-size: 100% 4px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .container {
+            border: 5px solid var(--danger-red);
+            padding: 40px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            box-shadow: 0 0 50px var(--danger-red), inset 0 0 50px var(--danger-red);
+            position: relative;
+            z-index: 20;
+            max-width: 90%;
+            /* コンテナ自体もガタガタ震える */
+            animation: shake 0.5s infinite;
+        }
+
+        h1 {
+            font-size: 5rem;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 5px;
+            /* テキストのグリッチ（崩れ）エフェクト */
+            text-shadow: 
+                2px 0 #fff, 
+                -2px 0 #ff0000;
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+        }
+
+        .error-message {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 20px;
+            border-top: 2px solid var(--danger-red);
+            border-bottom: 2px solid var(--danger-red);
+            padding: 20px 0;
+            background-color: var(--danger-red);
+            color: var(--black);
+        }
+
+        .details {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: var(--danger-red);
+            text-align: left;
+            opacity: 0.8;
+        }
+
+        /* オーバーレイ（クリック誘導用） */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            color: red;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            z-index: 1000;
+            cursor: pointer;
+            text-align: center;
+            flex-direction: column;
+        }
+
+        .blink-text {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .background-code {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            color: rgba(255, 0, 0, 0.15);
+            font-size: 12px;
+            overflow: hidden;
+            z-index: 1;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div>⚠️ CRITICAL ERROR DETECTED ⚠️</div>
+        <div class="blink-text" style="font-size: 1.2rem; margin-top: 20px;">[ CLICK SCREEN TO INITIALIZE SYSTEM DUMP ]</div>
+    </div>
+
+    <div class="scanlines"></div>
+    <div class="background-code" id="bgCode"></div>
+
+    <div class="container">
+        <h1>FATAL ERROR</h1>
+        <h1>03</h1>
+        
+        <div class="error-message">
+            アカウント作成時<br>生成失敗情報不足エラー発生
+        </div>
+
+        <div class="details">
+            > <br>
+            > <br>
+            > <br>
+            > <br>
+            > 警告: 直ちに管理者に連絡してください<br>
+            > 警告: データ破損の可能性があります
+        </div>
+    </div>
+
+    <script>
+        // 背景にランダムな16進数を流す演出
+        const bgCode = document.getElementById('bgCode');
+        let hexString = "";
+        for(let i=0; i<5000; i++) {
+            hexString += Math.floor(Math.random()*16).toString(16).toUpperCase() + " ";
+        }
+        bgCode.innerText = hexString;
+
+        // 音声制御 (Web Audio API)
+        const overlay = document.getElementById('overlay');
+        let audioCtx;
+        
+        overlay.addEventListener('click', () => {
+            overlay.style.display = 'none';
+            
+            // AudioContextの作成
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 不快なサイレン音の生成
+            playSiren();
+            playStaticNoise();
+        });
+
+        function playSiren() {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = 'sawtooth'; // ノコギリ波（耳障りな音）
+            osc.frequency.value = 500; // 基本周波数
+
+            // LFOで音程を揺らす（サイレン効果）
+            const lfo = audioCtx.createOscillator();
+            lfo.type = 'square';
+            lfo.frequency.value = 2; // 1秒間に2回変化
+            const lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = 300; // 揺れ幅
+
+            lfo.connect(lfoGain);
+            lfoGain.connect(osc.frequency);
+
+            gainNode.gain.value = 0.3; // 音量
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start();
+            lfo.start();
+        }
+
+        function playStaticNoise() {
+            const bufferSize = audioCtx.sampleRate * 2; // 2秒分のバッファ
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+                // ホワイトノイズ生成
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            noise.loop = true;
+
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.05; // ノイズは控えめに
+
+            noise.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            noise.start();
+        }
+    </script>
+</body>
+</html>

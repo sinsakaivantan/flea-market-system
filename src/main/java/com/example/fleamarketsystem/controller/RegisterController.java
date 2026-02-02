@@ -1,5 +1,7 @@
 package com.example.fleamarketsystem.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.example.fleamarketsystem.entity.User;
 import com.example.fleamarketsystem.service.UserService;
 
+import dev.samstevens.totp.secret.SecretGenerator;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -16,6 +19,13 @@ import lombok.RequiredArgsConstructor;
 public class RegisterController {
 
 	private final UserService userService;
+	private final SecretGenerator secretGenerator;
+	
+	@Autowired
+	public RegisterController(SecretGenerator secretGenerator,UserService userService){
+		this.secretGenerator = secretGenerator;
+		this.userService = userService;
+	}
 
 	@GetMapping("/register")
 	public String registerForm() {
@@ -57,16 +67,20 @@ public class RegisterController {
 			model.addAttribute("error", "このメールアドレスは既に登録されています。");
 			return "register";
 		}
-
+		BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+		String hashedPassword = encoder.encode(password);
+		String secret = secretGenerator.generate();
 		// ユーザー作成
 		User user = new User();
+		user.setTotpSecret(secret);
 		user.setName(name.trim());
 		user.setEmail(normalizedEmail);
-		// パスワードをエンコード（{noop}プレフィックスを使用）
-		user.setPassword("{noop}" + password);
+		// パスワードをエンコード（{noop}プレフィックスを使用）←bcryptに変えたわ
+		user.setPassword("{bcrypt}" + hashedPassword);
 		user.setRole("USER");
 		user.setEnabled(true);
 		user.setBanned(false);
+		user.setMfaEnabled(false);
 
 		try {
 			userService.saveUser(user);

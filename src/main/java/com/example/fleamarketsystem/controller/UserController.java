@@ -1,5 +1,7 @@
 package com.example.fleamarketsystem.controller;
 
+import static dev.samstevens.totp.util.Utils.*;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,10 @@ import com.example.fleamarketsystem.service.ItemService;
 import com.example.fleamarketsystem.service.ReviewService;
 import com.example.fleamarketsystem.service.UserService;
 
+import dev.samstevens.totp.exceptions.QrGenerationException;
+import dev.samstevens.totp.qr.QrData;
+import dev.samstevens.totp.qr.QrGenerator;
+
 @Controller
 @RequestMapping("/my-page")
 public class UserController {
@@ -36,10 +42,11 @@ public class UserController {
 	private final ReviewService reviewService;
 	private final FollowService followService;
 	private final CloudinaryService cloudinaryService;
+	private final QrGenerator qrGenerator;
 
 	public UserController(UserService userService, ItemService itemService, AppOrderService appOrderService,
 			FavoriteService favoriteService, ReviewService reviewService, FollowService followService,
-			CloudinaryService cloudinaryService) {
+			CloudinaryService cloudinaryService, QrGenerator qrGenerator) {
 		this.userService = userService;
 		this.itemService = itemService;
 		this.appOrderService = appOrderService;
@@ -47,6 +54,7 @@ public class UserController {
 		this.reviewService = reviewService;
 		this.followService = followService;
 		this.cloudinaryService = cloudinaryService;
+		this.qrGenerator = qrGenerator;
 	}
 
 	@GetMapping
@@ -137,11 +145,28 @@ public class UserController {
 	}
 
 	@GetMapping("/settings")
-	public String settings(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+	public String settings(@AuthenticationPrincipal UserDetails userDetails, Model model) throws QrGenerationException {
 		User currentUser = userService.getUserByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
 		model.addAttribute("user", currentUser);
+		model.addAttribute("ab", currentUser.isMfaEnabled());
+		String secret = currentUser.getTotpSecret();
+		if(secret==null) {
+			return "error3";
+		}
+		QrData data = new QrData.Builder()
+	            .label(currentUser.getEmail())
+	            .secret(secret)
+	            .issuer("🐬vantansinsakai")
+	            .build();
+
+	        // QRコード画像をBase64文字列として生成（<img>タグで使用可能）
+	        String qrCodeImage = getDataUriForImage(
+	          qrGenerator.generate(data), 
+	          qrGenerator.getImageMimeType()
+	        );
+	        model.addAttribute("qr", qrCodeImage);
 		return "settings";
 	}
 
@@ -149,6 +174,7 @@ public class UserController {
 	public String updateSettings(@AuthenticationPrincipal UserDetails userDetails,
 			@RequestParam("name") String name,
 			@RequestParam(value = "image", required = false) MultipartFile imageFile,
+			@RequestParam(value="shake",defaultValue = "false") Boolean aoa,
 			RedirectAttributes redirectAttributes) {
 		User currentUser = userService.getUserByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new RuntimeException("User not found"));
@@ -164,7 +190,7 @@ public class UserController {
 		}
 
 		currentUser.setName(name.trim());
-
+		currentUser.setMfaEnabled(aoa);
 		if (imageFile != null && !imageFile.isEmpty()) {
 			try {
 				String oldImageUrl = currentUser.getProfileImageUrl();
@@ -213,4 +239,20 @@ public class UserController {
 
 		return "redirect:/my-page/settings";
 	}
+	
+	@GetMapping("/stamp-card")
+	public String showStampCard() {
+	    return "stampcard(geminigatukurimasita)"; // templates/stamp_card.html を表示する
+	}
+	
+	@GetMapping("/geminigame")
+	public String bakaAiGemini() {
+		return "bakaaigemini";
+	}
+	
+	@GetMapping("/slot")
+    public String showSlot() {
+        return "slot"; // templates/slot.html
+    }
+	
 }

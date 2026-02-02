@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head><title>アカウント停止</title></head>
+
+<head><title>残念です</title></head>
+
 <body>
     <div th:if="${permanent}">
         <h1>お客様のアカウントは永久停止されています。</h1>
@@ -12,5 +14,10 @@
         <p>解除されるまでお待ちください。</p>
     </div>
     <a href="/login">ログインページに戻る</a>
+	<form th:action="@{|/igimousitate/${us.id}|}" method="post">
+		<label for="description">何かあれば書いてくださいね:</label>
+		<input type="text" id="description" name="description">
+		<button type="submit" class="button">異議申し立て</button>
+				</form>
 </body>
 </html>

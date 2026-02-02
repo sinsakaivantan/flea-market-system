@@ -6,6 +6,116 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
+	<style>
+		.container2 {
+		  width: 100%;
+		  max-width: 900px;
+		  display: flex;
+		  gap: 2rem;
+		  align-items: center;
+		  justify-content: flex-start; /* ← 左寄せ */
+		  margin-top: 20px;
+		}
+
+
+		    /* 左側のコンテンツエリア */
+		    .left-content {
+		      background: rgba(30, 30, 60, 0.6);
+		      padding: 2rem;
+		      border-radius: 16px;
+		      backdrop-filter: blur(8px);
+		      border: 1px solid rgba(100, 100, 255, 0.2);
+		    }
+			/* トグルスイッチ部分 */
+			  .toggle-wrapper {
+			    display: flex;
+			    align-items: center;
+			    gap: 1rem;
+			    font-size: 1.1rem;
+				flex-wrap: nowrap;        /* ← 追加: 折り返さない */
+				    width: fit-content;       
+			  }
+
+			  /* 隠す元チェックボックス */
+			  #toggle {
+			    position: absolute;
+			    opacity: 0;
+			    width: 0;
+			    height: 0;
+			  }
+
+			  /* スイッチの見た目 */
+			  .switch {
+			    position: relative;
+			    width: 64px;
+			    height: 34px;
+			    background: #6c5ce7;
+			    border-radius: 34px;
+			    cursor: pointer;
+			    transition: all 0.4s ease;
+			  }
+
+			  .switch::before {
+			    content: "";
+			    position: absolute;
+			    width: 26px;
+			    height: 26px;
+			    background: white;
+			    border-radius: 50%;
+			    top: 4px;
+			    left: 4px;
+			    transition: all 0.4s ease;
+			    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+			  }
+
+			  #toggle:checked + .switch {
+			    background: #17f5fc;
+			  }
+
+			  #toggle:checked + .switch::before {
+			    transform: translateX(30px);
+			  }
+
+			  /* 右側に表示される画像エリア */
+			  .right-image {
+			    width: 260px;
+			    height: 260px;
+			    display: flex;
+			    align-items: center;
+			    justify-content: center;
+			    background: #c1e4e9;
+			    border-radius: 16px;
+			    border: 2px dashed rgba(255,255,255,0.3); /* 枠感 */
+			    position: relative;
+			  }
+
+
+			  /* ONのときに出てくる */
+			  #toggle:checked ~ .right-image img {
+			    opacity: 1;
+			    transform: scale(1);
+			  }
+
+		  .right-image img {
+		    width: 220px;
+		    height: 220px;
+		    opacity: 0;
+		    transform: scale(0.9);
+		    transition: all 0.4s ease;
+		  }		
+		  .qr-text {
+		    max-width: 300px;
+		    color: #374151;
+		    font-size: 0.95rem;
+		    line-height: 1.6;
+		  }
+
+		  .qr-text h3 {
+		    margin: 0 0 8px;
+		    font-size: 1.05rem;
+		    color: #111827;
+		  }
+	  </style>
     <header th:insert="~{fragments/layout :: header}"></header>
     <div class="container">
         <h1>設定</h1>
@@ -30,12 +140,26 @@
                 <input type="text" name="name" th:value="${user.name}" required maxlength="50" class="settings-name-input">
                 <small style="display: block; margin-top: 4px; color: #6b7280; font-size: 0.875rem;">名前が長すぎると短縮されて表示される場合があります。</small>
             </div>
-
+			<div class="container2">
+										<input type="checkbox" name="shake" id="toggle" th:checked="${ab}"/>
+										    <label for="toggle" class="switch"></label>
+									    <div class="right-image">
+									        <img th:src=${qr}>
+									    </div>
+										<div class="qr-text">
+										        <h3>セキュリティトークン</h3>
+										        <p>
+										            Salesforce Authenticator、<br>
+													Google Authenticator <br>
+													などのアプリでQRコードを<br>読み取ってみよう！
+										        </p>
+												<strong style=color:red>有効化すると一度認証が必要になります<br><strong style=color:blue>必ず</strong>読み取ってから更新</strong>
+										    </div>
+									</div>
             <div class="button-group" style="margin-top: 20px;">
                 <button type="submit" class="button">更新する</button>
             </div>
         </form>
-
         <div class="button-group" style="margin-top: 30px;">
             <a th:href="@{/my-page}" class="button secondary">マイページへ戻る</a>
         </div>

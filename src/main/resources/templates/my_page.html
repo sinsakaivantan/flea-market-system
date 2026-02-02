@@ -8,12 +8,10 @@
 <body>
     <header th:insert="~{fragments/layout :: header}"></header>
     <div class="container mypage-container">
-        <h1 class="mypage-title">マイページ</h1>
+        <h1 class="mypage-title"><a href="/game" style="text-decoration: none; color: #2c3e50;">マ</a><a href="/clock" style="text-decoration: none; color: #2c3e50;">イ</a><a href="/my-page/geminigame" style="text-decoration: none; color: #2c3e50">ペ</a><a href="/my-page/stamp-card" style="text-decoration: none; color: #2c3e50">ー</a><a href="/my-page/slot" style="text-decoration: none; color: #2c3e50;">ジ</a></h1>
         <div class="mypage-header-divider"></div>
-
         <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}"></div>
         <div th:if="${successMessage}" class="success-message" th:text="${successMessage}"></div>
-
         <div class="mypage-profile-section">
             <div class="mypage-avatar">
                 <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : '/images/default-user.png'}"

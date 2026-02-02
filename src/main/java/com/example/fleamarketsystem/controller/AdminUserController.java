@@ -177,7 +177,7 @@ public class AdminUserController {
 		if (newtrustrunk<1) {
 			String reason = "お客様のアカウントにおいて、複数の重大な規約違反行為が繰り返し確認されたため、無期限の利用停止措置をとらせていただきました。";
 			Long adminId = users.findByEmailIgnoreCase(auth.getName()).map(User::getId).orElse(null);
-			boolean disableLogin = true;
+			boolean disableLogin = false;
 			service.banUser(id, adminId, reason, disableLogin);
 		} else {
 			int aa = damage * 2;

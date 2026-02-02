@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celestial Chronometer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #1a0b2e;
+            --gold: #d4af37;
+            --gold-glow: #f9e79f;
+            --text-main: #e0d8ff;
+            --clock-bg: rgba(20, 10, 40, 0.6);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #2e1a47 0%, #0d0417 100%);
+            color: var(--gold);
+            font-family: 'Cinzel', serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- 背景装飾 --- */
+        #constellation {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        }
+
+        /* --- 時計のコンテナ --- */
+        .clock-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 浮遊アニメーション */
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* --- 時計盤 (文字盤) --- */
+        .clock-face {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--clock-bg);
+            border: 4px double var(--gold);
+            box-shadow: 
+                0 0 20px rgba(0,0,0,0.8),
+                inset 0 0 50px rgba(0,0,0,0.8),
+                0 0 15px rgba(212, 175, 55, 0.3); /* ゴールドの発光 */
+            backdrop-filter: blur(5px);
+            position: relative;
+        }
+
+        /* --- 装飾リング (回転する魔法陣) --- */
+        .magic-ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%; height: 85%;
+            border: 1px dashed rgba(212, 175, 55, 0.3);
+            border-radius: 50%;
+            animation: rotateRight 60s linear infinite;
+        }
+        .magic-ring::before {
+            content: ''; position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px dotted rgba(212, 175, 55, 0.2);
+            border-radius: 50%;
+        }
+        @keyframes rotateRight { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* --- 数字 (ローマ数字) --- */
+        .number {
+            position: absolute;
+            width: 100%; height: 100%;
+            text-align: center;
+            color: var(--gold-glow);
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px var(--gold);
+            pointer-events: none;
+        }
+        /* 数字の配置 (JSで角度計算してもいいが、今回はCSS変数で配置) */
+        .number span {
+            display: inline-block;
+            padding-top: 15px;
+        }
+
+        /* --- 針の共通スタイル --- */
+        .hand {
+            position: absolute;
+            bottom: 50%; left: 50%;
+            transform-origin: bottom center;
+            border-radius: 4px;
+            z-index: 10;
+            transition: transform 0.05s cubic-bezier(0.4, 2.08, 0.55, 0.44); /* 少しバウンドする動き */
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        /* 時針 (短く太く) */
+        .hand.hour {
+            width: 8px; height: 25%;
+            background: var(--gold);
+            /* 太陽の装飾 */
+        }
+        .hand.hour::before {
+            content: '☀'; /* 太陽シンボル */
+            position: absolute; top: -25px; left: 50%; transform: translateX(-50%);
+            font-size: 20px; color: var(--gold-glow);
+            text-shadow: 0 0 10px var(--gold);
+        }
+
+        /* 分針 (長く) */
+        .hand.minute {
+            width: 4px; height: 38%;
+            background: var(--text-main);
+            opacity: 0.8;
+        }
+        .hand.minute::before {
+            content: '☽'; /* 月シンボル */
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            font-size: 18px; color: var(--text-main);
+        }
+
+        /* 秒針 (細く、長く、赤い宝石のようなアクセント) */
+        .hand.second {
+            width: 2px; height: 42%;
+            background: #ff6b6b; /* 赤 */
+            box-shadow: 0 0 8px #ff6b6b;
+            transition: transform 0.02s linear; /* 秒針は滑らかに */
+            z-index: 11;
+        }
+        .hand.second::after {
+            content: ''; position: absolute; bottom: -20px; left: 50%;
+            transform: translateX(-50%);
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #ff6b6b;
+        }
+
+        /* --- 中心点 --- */
+        .center-point {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px; height: 16px;
+            background: var(--gold);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--gold-glow);
+            z-index: 12;
+        }
+
+        /* --- デジタル時刻表示 (補助) --- */
+        .digital-display {
+            position: absolute;
+            bottom: -60px;
+            width: 100%;
+            text-align: center;
+            font-size: 2rem;
+            color: var(--text-main);
+            text-shadow: 0 0 10px var(--gold);
+            letter-spacing: 0.2em;
+        }
+        .date-display {
+            position: absolute;
+            top: -40px;
+            width: 100%;
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+        }
+        
+        /* 戻るボタン */
+        .back-link {
+            position: absolute; bottom: 20px; left: 20px;
+            color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--gold);
+            opacity: 0.6; transition: 0.3s;
+        }
+        .back-link:hover { opacity: 1; text-shadow: 0 0 5px var(--gold); }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="constellation"></canvas>
+
+    <div class="clock-container">
+        
+        <div class="date-display" id="dateDisplay"></div>
+
+        <div class="clock-face">
+            <div class="magic-ring"></div>
+
+            <div id="numbersContainer"></div>
+
+            <div class="hand hour" id="hourHand"></div>
+            <div class="hand minute" id="minuteHand"></div>
+            <div class="hand second" id="secondHand"></div>
+            
+            <div class="center-point"></div>
+        </div>
+
+        <div class="digital-display" id="digitalClock">00:00:00</div>
+    </div>
+    
+    <a href="/items" class="back-link">Return to Market</a>
+
+    <script>
+        /* ---------------------------------------------------
+         * 1. 星空背景 (前回のコードを再利用して最適化)
+         * --------------------------------------------------- */
+        const canvas = document.getElementById('constellation');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        const stars = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 1.5;
+                this.alpha = Math.random();
+                this.fadeDir = Math.random() > 0.5 ? 0.005 : -0.005;
+                this.color = Math.random() > 0.85 ? '#d4af37' : '#ffffff'; // ゴールド混じり
+            }
+            update() {
+                this.alpha += this.fadeDir;
+                if (this.alpha >= 1 || this.alpha <= 0.1) this.fadeDir *= -1;
+            }
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initStars() {
+            resize();
+            for(let i=0; i<200; i++) stars.push(new Star());
+            animateStars();
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, width, height);
+            stars.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animateStars);
+        }
+        
+        window.addEventListener('resize', resize);
+        initStars();
+
+
+        /* ---------------------------------------------------
+         * 2. アナログ時計のロジック
+         * --------------------------------------------------- */
+        
+        // ローマ数字の配列
+        const romans = ["XII", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"];
+        const numbersContainer = document.getElementById('numbersContainer');
+
+        // 数字を円形に配置
+        for (let i = 0; i < 12; i++) {
+            const numDiv = document.createElement('div');
+            numDiv.className = 'number';
+            const span = document.createElement('span');
+            span.innerText = romans[i];
+            
+            // 角度計算: 12時(0番目)は0度。各30度ずつ回転
+            // 回転させた後、文字が逆さまにならないようにspanを逆回転させる
+            numDiv.style.transform = `rotate(${i * 30}deg)`;
+            span.style.transform = `rotate(-${i * 30}deg)`;
+            
+            numDiv.appendChild(span);
+            numbersContainer.appendChild(numDiv);
+        }
+
+        const hourHand = document.getElementById('hourHand');
+        const minuteHand = document.getElementById('minuteHand');
+        const secondHand = document.getElementById('secondHand');
+        const digitalClock = document.getElementById('digitalClock');
+        const dateDisplay = document.getElementById('dateDisplay');
+
+        function updateClock() {
+            const now = new Date();
+            const seconds = now.getSeconds();
+            const minutes = now.getMinutes();
+            const hours = now.getHours();
+            const milliseconds = now.getMilliseconds();
+
+            // 針の角度計算
+            // 秒針: (秒 + ミリ秒/1000) * 6度  => 滑らかに動かすためミリ秒も考慮
+            const secondDeg = ((seconds + milliseconds / 1000) / 60) * 360;
+            
+            // 分針: (分 + 秒/60) * 6度
+            const minuteDeg = ((minutes + seconds / 60) / 60) * 360;
+            
+            // 時針: (時 + 分/60) * 30度 (12時間表記に変換してから)
+            const hourDeg = (((hours % 12) + minutes / 60) / 12) * 360;
+
+            secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
+            minuteHand.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+            hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+
+            // デジタル時計更新 (ゼロ埋め)
+            const hStr = String(hours).padStart(2, '0');
+            const mStr = String(minutes).padStart(2, '0');
+            const sStr = String(seconds).padStart(2, '0');
+            digitalClock.innerText = `${hStr}:${mStr}:${sStr}`;
+
+            // 日付更新 (例: October 31, 2026)
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            dateDisplay.innerText = now.toLocaleDateString('en-US', options);
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+
+    </script>
+</body>
+</html>

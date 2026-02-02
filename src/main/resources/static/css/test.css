@@ -1,0 +1,317 @@
+/* --- Fonts Import --- */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap');
+
+:root {
+  /* 宇宙・魔法テーマのカラーパレット */
+  --bg-deep: #1a0b2e;         /* 背景：深い紫 */
+  --bg-gradient-start: #2e1a47;
+  --bg-gradient-end: #0d0417;
+  
+  --card-bg: rgba(20, 10, 40, 0.75); /* カード：半透明の暗紫 */
+  --header-bg: rgba(15, 5, 30, 0.9); /* ヘッダー：濃い半透明 */
+  
+  --border: rgba(212, 175, 55, 0.3); /* 枠線：薄いゴールド */
+  --border-glow: rgba(212, 175, 55, 0.6);
+  
+  --text-main: #e0d8ff;       /* 文字：薄いラベンダー */
+  --text-muted: rgba(224, 216, 255, 0.6);
+  
+  --primary: #d4af37;         /* メイン色：アンティークゴールド */
+  --primary-glow: #f9e79f;    /* 光るゴールド */
+  
+  --danger: #ff6b6b;          /* 警告色：赤 */
+  --success: #69f0ae;         /* 成功色：淡い緑 */
+}
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: 'Cormorant Garamond', serif; /* 本文はエレガントなセリフ体 */
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(circle at center, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+    background-attachment: fixed; /* スクロールしても背景は固定 */
+    color: var(--text-main);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* --- 背景装飾用 (HTMLに要素がある場合のみ適用) --- */
+#constellation {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none;
+}
+.zodiac-bg {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 80vw; height: 80vw; max-width: 800px; max-height: 800px;
+    border: 1px dashed rgba(212, 175, 55, 0.15); border-radius: 50%;
+    z-index: -1; pointer-events: none; opacity: 0.4;
+    animation: rotateBg 120s linear infinite;
+}
+@keyframes rotateBg { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+
+body > .container {
+    padding: 20px;
+}
+
+/* --- Global Header (Sticky Glass) --- */
+.global-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  height: 64px;
+  position: fixed;
+  top: 0; left: 0; right: 0; width: 100%;
+  z-index: 1000;
+}
+
+.header-logo {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; color: var(--primary);
+  font-family: 'Cinzel', serif; /* ロゴは威厳のあるフォント */
+  font-size: 1.3rem; letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.header-logo-image { height: 40px; width: auto; filter: drop-shadow(0 0 5px var(--primary)); }
+
+.header-admin-button {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--text-muted);
+  color: var(--text-muted);
+  border-radius: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: 0.3s;
+}
+.header-admin-button:hover {
+  border-color: var(--primary); color: var(--primary); box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.header-user-info {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--text-main);
+  padding: 5px 10px; border-radius: 6px; transition: 0.3s;
+}
+.header-user-info:hover { background: rgba(255, 255, 255, 0.05); }
+
+.header-profile-image {
+  width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.header-post-button {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.4));
+  border: 1px solid var(--primary);
+  color: var(--primary-glow);
+  text-decoration: none; border-radius: 4px;
+  font-family: 'Cinzel', serif; font-size: 0.9rem; letter-spacing: 0.05em;
+  transition: 0.3s;
+  text-shadow: 0 0 5px var(--primary);
+}
+.header-post-button:hover {
+  background: var(--primary); color: #000;
+  box-shadow: 0 0 20px var(--primary);
+  text-shadow: none;
+}
+
+
+/* --- Main Container --- */
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
+    background: var(--card-bg);
+    padding: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+header ~ .container { margin-top: 100px; }
+
+/* --- Typography --- */
+h1, h2, h3 {
+    color: var(--primary);
+    font-family: 'Cinzel', serif;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+h1 { margin-bottom: 30px; font-size: 2.5em; letter-spacing: 0.1em; }
+h2 {
+    font-size: 1.8em; margin-top: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    display: inline-block; /* 中央寄せの下線を文字幅に合わせる */
+    width: 100%;
+}
+
+p { margin-bottom: 15px; color: var(--text-main); font-size: 1.1rem; }
+label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--primary); font-family: 'Cinzel', serif; }
+
+/* --- Forms (Magical Style) --- */
+input[type="text"], input[type="password"], input[type="email"], input[type="number"], textarea, select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3); /* 暗い背景 */
+    border: none;
+    border-bottom: 1px solid var(--border); /* 下線のみ */
+    border-radius: 4px 4px 0 0;
+    color: var(--primary-glow);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    transition: 0.4s;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-bottom-color: var(--primary);
+    background: rgba(212, 175, 55, 0.05);
+    box-shadow: 0 10px 20px -10px rgba(212, 175, 55, 0.1);
+}
+
+/* --- Buttons --- */
+button, .button {
+    background: transparent;
+    color: var(--primary);
+    padding: 10px 30px;
+    border: 1px solid var(--primary);
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1em;
+    letter-spacing: 0.1em;
+    transition: all 0.4s ease;
+    display: inline-block;
+    margin: 0 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+button:hover, .button:hover {
+    background: var(--primary);
+    color: #1a0b2e; /* 背景色と同じ濃い色 */
+    box-shadow: 0 0 20px var(--primary);
+    transform: translateY(-2px);
+}
+
+.button.secondary { border-color: var(--text-muted); color: var(--text-muted); }
+.button.secondary:hover { background: var(--text-muted); color: #000; box-shadow: 0 0 15px var(--text-muted); }
+
+.button.danger { border-color: var(--danger); color: var(--danger); }
+.button.danger:hover { background: var(--danger); color: #fff; box-shadow: 0 0 15px var(--danger); }
+
+
+/* --- Tables --- */
+table {
+    width: 100%; border-collapse: collapse; margin-top: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(212, 175, 55, 0.1); }
+th {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--primary); font-family: 'Cinzel', serif; font-weight: normal;
+    border-bottom: 2px solid var(--border);
+}
+tr:hover { background: rgba(212, 175, 55, 0.05); }
+
+/* --- Item Grid (Cards) --- */
+.item-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; margin-top: 20px;
+}
+.item-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden; text-align: center;
+    transition: 0.4s ease;
+    backdrop-filter: blur(5px);
+}
+.item-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+.item-card a { text-decoration: none; color: inherit; display: block; padding: 15px; }
+.item-card img {
+    width: 100%; height: 180px; object-fit: cover;
+    border-bottom: 1px solid var(--border); margin-bottom: 15px;
+    opacity: 0.9; transition: 0.3s;
+}
+.item-card:hover img { opacity: 1; }
+
+.item-card h3 { font-size: 1.2em; margin-bottom: 5px; color: var(--text-main); font-family: 'Cormorant Garamond', serif; text-shadow: none; }
+.item-card .price { font-size: 1.4em; font-weight: bold; color: var(--primary); margin-bottom: 10px; font-family: 'Cinzel', serif; }
+
+/* --- Pagination --- */
+.pagination a, .pagination span.current-page {
+    display: inline-block; padding: 8px 15px; margin: 0 5px;
+    border: 1px solid var(--border); border-radius: 2px;
+    text-decoration: none; color: var(--primary); font-family: 'Cinzel', serif;
+    background: transparent;
+}
+.pagination a:hover, .pagination span.current-page {
+    background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary);
+}
+
+/* --- Chat --- */
+.chat-box {
+    border: 1px solid var(--border); background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px; padding: 15px;
+}
+.chat-message { border-radius: 12px; padding: 10px 15px; margin-bottom: 12px; }
+
+.my-message {
+    background: rgba(212, 175, 55, 0.2); /* 自分のメッセージ：薄いゴールド */
+    border: 1px solid var(--border);
+    margin-left: auto; text-align: right; color: var(--primary-glow);
+}
+.other-message {
+    background: rgba(255, 255, 255, 0.1); /* 相手のメッセージ：薄い白 */
+    margin-right: auto; text-align: left;
+}
+.sender-name { color: var(--primary); font-family: 'Cinzel', serif; font-size: 0.8rem; }
+.message-time { font-size: 0.7em; color: var(--text-muted); }
+
+/* --- My Page Specific --- */
+.mypage-username { font-family: 'Cinzel', serif; color: var(--primary); text-shadow: 0 0 10px var(--border); }
+.profile-image { border: 3px solid var(--primary); box-shadow: 0 0 15px var(--primary); }
+.mypage-divider { background-color: var(--border); opacity: 0.5; }
+
+.follow-button {
+    background: transparent; border: 1px solid var(--primary); color: var(--primary);
+    font-family: 'Cinzel', serif;
+}
+.follow-button:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+.follow-button.following {
+    background: rgba(255,255,255,0.1); border-color: var(--text-muted); color: var(--text-muted);
+}
+
+/* Stats & Tabs */
+.mypage-stat-value { font-family: 'Cinzel', serif; font-size: 1.5rem; color: var(--text-main); }
+.mypage-tab-link { color: var(--text-muted); font-family: 'Cinzel', serif; letter-spacing: 0.05em; border-bottom: 2px solid transparent; transition: 0.3s; }
+.mypage-tab-link:hover { color: var(--primary); text-shadow: 0 0 5px var(--primary); }
+
+/* Toggle Switch (Settings) */
+.switch { background: rgba(255,255,255,0.1); border: 1px solid var(--border); }
+#toggle:checked + .switch { background: var(--primary); box-shadow: 0 0 15px var(--primary); }
+
+/* Messages */
+.error-message { color: var(--danger); text-shadow: 0 0 5px var(--danger); }
+.success-message {
+    background: rgba(105, 240, 174, 0.1); border: 1px solid var(--success); color: var(--success);
+}

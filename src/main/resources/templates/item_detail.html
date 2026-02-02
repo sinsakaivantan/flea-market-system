@@ -4,310 +4,138 @@
     <meta charset="UTF-8">
     <title th:text="${item.name} + ' - 商品詳細'"></title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
-	<style> 
-		.overlay {
-		    display: none;
-		    position: fixed;
-		    top: 0;
-		    left: 0;
-		    width: 100%;
-		    height: 100%;
-		    background-color: rgba(0, 0, 0, 0.5);
-		    justify-content: center;
-		    align-items: center;
-		    z-index: 1000;
-		}
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
-		.form-container {
-		    position: relative;
-		    background: white;
-		    padding: 30px;
-		    border-radius: 10px;
-		    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-		    width: 400px;
-		    max-width: 90%;
-		}
+    <style> 
+        /* 共通スタイル */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .form-container { position: relative; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 400px; max-width: 90%; }
+        .close-btn { position: absolute; top: 10px; left: 10px; background: none; border: none; font-size: 28px; cursor: pointer; color: #aaa; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+        .close-btn:hover { color: #000; }
+        .open-btn { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .open-btn:hover { background-color: #0056b3; }
 
-		.close-btn {
-		    position: absolute;
-		    top: 10px;
-		    left: 10px;
-		    background: none;
-		    border: none;
-		    font-size: 28px;
-		    cursor: pointer;
-		    color: #aaa;
-		    width: 30px;
-		    height: 30px;
-		    display: flex;
-		    align-items: center;
-		    justify-content: center;
-		}
+        .item-detail-container { display: flex; gap: 30px; margin-bottom: 40px; }
+        .item-images-section { flex: 0 0 50%; display: flex; gap: 15px; }
+        .thumbnail-list { display: flex; flex-direction: column; gap: 10px; max-height: 600px; overflow-y: auto; }
+        .thumbnail-item { width: 80px; height: 80px; object-fit: cover; border-radius: 5px; border: 2px solid #ddd; cursor: pointer; transition: border-color 0.3s; }
+        .thumbnail-item:hover { border-color: #007bff; }
+        .thumbnail-item.active { border-color: #007bff; border-width: 3px; }
+        .main-image-container { flex: 1; display: flex; align-items: flex-start; justify-content: center; }
+        .main-image { width: 100%; max-width: 500px; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); cursor: pointer; }
+        
+        .item-info-section { flex: 1; }
+        .item-info-section h1 { margin-top: 0; }
+        .item-info-section .price { font-size: 1.8em; font-weight: bold; color: #007bff; margin: 20px 0; }
+        .item-info-section p { margin: 15px 0; line-height: 1.6; }
+        .seller-info { display: flex; align-items: center; gap: 10px; margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px; }
+        .seller-info a { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+        .button-group { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px; }
 
-		.close-btn:hover {
-		    color: #000;
-		}
+        /* mainブランチのスタイル */
+        .seller-items-section { margin-top: 40px; padding-top: 40px; border-top: 2px solid #eee; }
+        .seller-items-section h2 { margin-bottom: 20px; }
+        .chat-section { margin-top: 40px; padding-top: 40px; border-top: 2px solid #eee; }
 
-		.open-btn {
-		    padding: 10px 20px;
-		    font-size: 16px;
-		    background-color: #007bff;
-		    color: white;
-		    border: none;
-		    border-radius: 5px;
-		    cursor: pointer;
-		}
-
-		.open-btn:hover {
-		    background-color: #0056b3;
-		}
-
-		/* 商品詳細ページのレイアウト */
-		.item-detail-container {
-		    display: flex;
-		    gap: 30px;
-		    margin-bottom: 40px;
-		}
-
-		/* 左側：画像エリア */
-		.item-images-section {
-		    flex: 0 0 50%;
-		    display: flex;
-		    gap: 15px;
-		}
-
-		.thumbnail-list {
-		    display: flex;
-		    flex-direction: column;
-		    gap: 10px;
-		    max-height: 600px;
-		    overflow-y: auto;
-		}
-
-		.thumbnail-item {
-		    width: 80px;
-		    height: 80px;
-		    object-fit: cover;
-		    border-radius: 5px;
-		    border: 2px solid #ddd;
-		    cursor: pointer;
-		    transition: border-color 0.3s;
-		}
-
-		.thumbnail-item:hover {
-		    border-color: #007bff;
-		}
-
-		.thumbnail-item.active {
-		    border-color: #007bff;
-		    border-width: 3px;
-		}
-
-		.main-image-container {
-		    flex: 1;
-		    display: flex;
-		    align-items: flex-start;
-		    justify-content: center;
-		}
-
-		.main-image {
-		    width: 100%;
-		    max-width: 500px;
-		    aspect-ratio: 1 / 1;
-		    object-fit: cover;
-		    border-radius: 8px;
-		    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-		    cursor: pointer;
-		}
-
-		/* 右側：商品情報エリア */
-		.item-info-section {
-		    flex: 1;
-		}
-
-		.item-info-section h1 {
-		    margin-top: 0;
-		}
-
-		.item-info-section .price {
-		    font-size: 1.8em;
-		    font-weight: bold;
-		    color: #007bff;
-		    margin: 20px 0;
-		}
-
-		.item-info-section p {
-		    margin: 15px 0;
-		    line-height: 1.6;
-		}
-
-		.seller-info {
-		    display: flex;
-		    align-items: center;
-		    gap: 10px;
-		    margin: 20px 0;
-		    padding: 15px;
-		    background-color: #f8f9fa;
-		    border-radius: 8px;
-		}
-
-		.seller-info a {
-		    display: flex;
-		    align-items: center;
-		    gap: 10px;
-		    text-decoration: none;
-		    color: inherit;
-		}
-
-		.button-group {
-		    margin-top: 30px;
-		    display: flex;
-		    flex-wrap: wrap;
-		    gap: 10px;
-		}
-
-		/* 出品者の出品中商品セクション */
-		.seller-items-section {
-		    margin-top: 40px;
-		    padding-top: 40px;
-		    border-top: 2px solid #eee;
-		}
-
-		.seller-items-section h2 {
-		    margin-bottom: 20px;
-		}
-
-		/* チャットセクション */
-		.chat-section {
-		    margin-top: 40px;
-		    padding-top: 40px;
-		    border-top: 2px solid #eee;
-		}
-
-		/* レスポンシブ対応 */
-		@media (max-width: 768px) {
-		    .item-detail-container {
-		        flex-direction: column;
-		    }
-		    
-		    .item-images-section {
-		        flex-direction: column;
-		    }
-		    
-		    .thumbnail-list {
-		        flex-direction: row;
-		        max-height: none;
-		        overflow-x: auto;
-		        overflow-y: hidden;
-		    }
-		    
-		    .thumbnail-item {
-		        flex-shrink: 0;
-		    }
-		}
-	</style>
+        /* WebSocketチャット用スタイル (aiueoブランチ) */
+        .chat-box { 
+            border: 1px solid #ddd; padding: 15px; height: 400px; overflow-y: scroll; background: #f9f9f9; border-radius: 5px; margin-bottom: 15px; 
+        }
+        .chat-message { margin-bottom: 10px; padding: 10px; border-radius: 5px; max-width: 80%; }
+        .my-message { background-color: #d1e7dd; margin-left: auto; text-align: right; }
+        .other-message { background-color: #fff; border: 1px solid #ddd; margin-right: auto; }
+        .sender-name { font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 3px; }
+        .message-time { font-size: 0.8em; color: #666; margin-left: 10px; }
+        .chat-form textarea { width: 100%; height: 50px; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .chat-form button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        
+        @media (max-width: 768px) {
+            .item-detail-container { flex-direction: column; }
+            .item-images-section { flex-direction: column; }
+            .thumbnail-list { flex-direction: row; max-height: none; overflow-x: auto; overflow-y: hidden; }
+            .thumbnail-item { flex-shrink: 0; }
+        }
+    </style>
 </head>
 <body>
-	<header th:insert="~{fragments/layout :: header}"></header>
-	<div class="overlay" id="overlay">
-		<div class="form-container">
-			<button class="close-btn" id="closeForm">❌</button>
-			<p id="reportTargetLabel"><span id="reportTargetName" th:text="${item.seller.name}"></span>を通報</p>
-			<form id="reportForm" th:action="@{|/report/${item.seller.id}|}" method="post">
-				<label for="description">理由:</label>
-				<textarea id="description" name="description" rows="5"></textarea>
-				<button type="submit" class="button">通報</button>
-			</form>
-		</div>
-	</div>
-	<!-- 管理者用：商品削除モーダル -->
-	<div class="overlay" id="overlayAdminDelete" sec:authorize="hasRole('ADMIN')">
-		<div class="form-container">
-			<button class="close-btn" id="closeAdminDeleteForm" type="button">❌</button>
-			<p><strong>この商品を削除する</strong></p>
-			<p style="font-size: 12px; color: #666;">削除理由を入力してください。出品者にメールで通知されます。</p>
-			<form th:action="@{/admin/items/{id}/delete(id=${item.id})}" method="post">
-				<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-				<label for="adminDeleteReason">削除理由（必須）:</label>
-				<textarea id="adminDeleteReason" name="reason" rows="5" required placeholder="例: 出品規約に違反しているため"></textarea>
-				<button type="submit" class="button danger" onclick="return confirm('本当にこの商品を削除しますか？');">削除する</button>
-			</form>
-		</div>
-	</div>
+    <header th:insert="~{fragments/layout :: header}"></header>
+    
+    <div class="overlay" id="overlay">
+        <div class="form-container">
+            <button class="close-btn" id="closeForm">❌</button>
+            <p id="reportTargetLabel"><span id="reportTargetName" th:text="${item.seller.name}"></span>を通報</p>
+            <form id="reportForm" th:action="@{|/report/${item.seller.id}|}" method="post">
+                <label for="description">理由:</label>
+                <textarea id="description" name="description" rows="5"></textarea>
+                <button type="submit" class="button">通報</button>
+            </form>
+        </div>
+    </div>
+    <div class="overlay" id="overlayAdminDelete" sec:authorize="hasRole('ADMIN')">
+        <div class="form-container">
+            <button class="close-btn" id="closeAdminDeleteForm" type="button">❌</button>
+            <p><strong>この商品を削除する</strong></p>
+            <form th:action="@{/admin/items/{id}/delete(id=${item.id})}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <label for="adminDeleteReason">削除理由（必須）:</label>
+                <textarea id="adminDeleteReason" name="reason" rows="5" required></textarea>
+                <button type="submit" class="button danger" onclick="return confirm('本当にこの商品を削除しますか？');">削除する</button>
+            </form>
+        </div>
+    </div>
+
     <div class="container">
         <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}"></div>
         <div th:if="${successMessage}" class="success-message" th:text="${successMessage}"></div>
 
-        <!-- 左右分割レイアウト -->
         <div class="item-detail-container">
-            <!-- 左側：画像エリア -->
             <div class="item-images-section">
-                <!-- サムネイルリスト（縦並び） -->
                 <div class="thumbnail-list" id="thumbnailList">
-                    <!-- 複数画像がある場合 -->
                     <img th:if="${item.imageUrls != null and !item.imageUrls.isEmpty()}"
                          th:each="imageUrl, iterStat : ${item.imageUrls}"
                          th:src="${imageUrl}"
-                         alt="商品画像サムネイル"
                          class="thumbnail-item"
                          th:classappend="${iterStat.first ? 'active' : ''}"
                          th:attr="data-image-url=${imageUrl}"
                          onclick="changeMainImage(this)">
-                    <!-- 旧形式の単一画像 -->
-                    <img th:if="${(item.imageUrls == null or item.imageUrls.isEmpty()) and item.imageUrl != null}"
-                         th:src="${item.imageUrl}"
-                         alt="商品画像サムネイル"
+                    <img th:if="${(item.imageUrls == null or item.imageUrls.isEmpty())}"
+                         th:src="${item.imageUrl != null ? item.imageUrl : '/images/noimage.png'}"
                          class="thumbnail-item active"
-                         th:attr="data-image-url=${item.imageUrl}"
-                         onclick="changeMainImage(this)">
-                    <!-- 画像がない場合 -->
-                    <img th:if="${(item.imageUrls == null or item.imageUrls.isEmpty()) and item.imageUrl == null}"
-                         src="/images/noimage.png"
-                         alt="商品画像"
-                         class="thumbnail-item active"
-                         data-image-url="/images/noimage.png"
+                         th:attr="data-image-url=${item.imageUrl != null ? item.imageUrl : '/images/noimage.png'}"
                          onclick="changeMainImage(this)">
                 </div>
-                
-                <!-- メイン画像 -->
                 <div class="main-image-container">
                     <img id="mainImage"
                          th:src="${item.firstImageUrl != null ? item.firstImageUrl : '/images/noimage.png'}"
-                         alt="商品画像"
                          class="main-image"
                          onclick="showImageModal(this.src)">
                 </div>
             </div>
 
-            <!-- 右側：商品情報エリア -->
             <div class="item-info-section">
                 <h1 th:text="${item.name}"></h1>
                 <p class="price">価格: <span th:text="'¥' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}"></span></p>
-                <p>
-                    <strong>説明:</strong><br>
-                    <span th:text="${item.description}"
-                          style="white-space: pre-wrap;"></span>
-                </p>
+                <p><strong>説明:</strong><br><span th:text="${item.description}" style="white-space: pre-wrap;"></span></p>
                 <p><strong>カテゴリ:</strong> <span th:text="${item.category != null ? item.category.name : '未分類'}"></span></p>
                 
-                <!-- 購入ボタンとお気に入りボタン（カテゴリと出品者の間） -->
                 <div style="margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                     <form th:action="@{/orders/initiate-purchase}" method="post" th:if="${item.seller.email != #authentication.name}" onsubmit="return confirm('本当にこの商品を購入しますか？');" style="display:inline;">
                         <input type="hidden" name="itemId" th:value="${item.id}">
                         <button type="submit" class="button">購入する</button>
                     </form>
-                    <div th:if="${item.seller.email == #authentication.name}" style="color: #666; font-style: italic;">
-                        <p>（出品者のため購入できません）</p>
-                    </div>
+                    <div th:if="${item.seller.email == #authentication.name}" style="color: #666; font-style: italic;"><p>（出品者のため購入できません）</p></div>
+                    
                     <div class="favorite-heart-row">
                         <span class="favorite-heart-wrap">
                             <sec:authorize access="isAuthenticated()">
                                 <th:block th:if="${item.seller.email != #authentication.name}">
                                     <form th:if="${isFavorited}" th:action="@{/items/{id}/unfavorite(id=${item.id})}" method="post" style="display:inline;">
-                                        <button type="submit" class="btn-heart btn-heart-on" title="お気に入り解除" aria-label="お気に入り解除"><img th:src="@{/images/Heart-on.png}" alt="お気に入り中" class="heart-img"></button>
+                                        <button type="submit" class="btn-heart btn-heart-on"><img th:src="@{/images/Heart-on.png}" class="heart-img"></button>
                                     </form>
                                     <form th:unless="${isFavorited}" th:action="@{/items/{id}/favorite(id=${item.id})}" method="post" style="display:inline;">
-                                        <button type="submit" class="btn-heart btn-heart-off" title="お気に入りに追加" aria-label="お気に入りに追加"><img th:src="@{/images/Heart-off.png}" alt="お気に入りに追加" class="heart-img"></button>
+                                        <button type="submit" class="btn-heart btn-heart-off"><img th:src="@{/images/Heart-off.png}" class="heart-img"></button>
                                     </form>
                                 </th:block>
                             </sec:authorize>
@@ -318,9 +146,7 @@
                 
                 <div class="seller-info">
                     <a th:href="@{/users/{id}(id=${item.seller.id})}">
-                        <img th:src="${item.seller.profileImageUrl != null ? item.seller.profileImageUrl : '/images/default-user.png'}" 
-                             alt="出品者画像" 
-                             class="profile-image-small">
+                        <img th:src="${item.seller.profileImageUrl != null ? item.seller.profileImageUrl : '/images/default-user.png'}" class="profile-image-small">
                         <div>
                             <p style="margin: 0;"><strong>出品者:</strong> <span th:text="${item.seller.name}"></span>
                                 <span th:if="${sellerAverageRating}">(平均評価: <span th:text="${sellerAverageRating}"></span>)</span>
@@ -330,7 +156,8 @@
                 </div>
 
                 <div class="button-group">
-                    <a th:href="@{/chat/{itemId}(itemId=${item.id})}" class="button secondary">チャットで質問/交渉</a>
+                    <a th:if="${isChatPage == null or !isChatPage}" th:href="@{/chat/{itemId}(itemId=${item.id})}" class="button secondary">チャットで質問/交渉</a>
+                    
                     <div sec:authorize="isAuthenticated()" th:if="${item.seller.email == #authentication.name}" style="display:inline-block;">
                         <a th:href="@{/items/{id}/edit(id=${item.id})}" class="button">編集</a>
                     </div>
@@ -347,8 +174,7 @@
             </div>
         </div>
 
-        <!-- 出品者の出品中商品（/chatページでは非表示） -->
-        <div th:if="${isChatPage == null or !isChatPage}" class="seller-items-section" style="margin-top: 40px; padding-top: 40px; border-top: 2px solid #eee;">
+        <div th:if="${isChatPage == null or !isChatPage}" class="seller-items-section">
             <h2>同じ出品者の商品</h2>
             <div class="item-grid">
                 <div class="item-card" th:each="sellerItem : ${sellerActiveItems}">
@@ -364,161 +190,198 @@
             </div>
         </div>
 
-        <!-- チャットセクション（/chatページでのみ表示） -->
-        <div th:if="${isChatPage != null and isChatPage}" class="chat-section" style="margin-top: 40px; padding-top: 40px; border-top: 2px solid #eee;">
+        <div th:if="${isChatPage != null and isChatPage}" class="chat-section">
             <div style="margin-bottom: 20px;">
                 <a th:href="@{/items/{id}(id=${item.id})}" class="button secondary">元の商品ページに戻る</a>
             </div>
+            
             <h2>チャット</h2>
-            <div class="chat-box">
-                <div th:each="chat : ${chats}" class="chat-message" th:classappend="${chat.sender.email == #authentication.name ? 'my-message' : 'other-message'}">
-                    <div class="chat-message-inner">
-                        <div class="chat-message-header">
-                            <span class="sender-name" th:text="${chat.sender.name}"></span>
-                            <span class="message-time" th:text="${#temporals.format(chat.createdAt, 'yyyy/MM/dd HH:mm')}"></span>
-                        </div>
-                        <p class="chat-message-body" th:text="${chat.message}"></p>
-                        <div sec:authorize="isAuthenticated()" th:if="${chat.sender.email != #authentication.name}" class="chat-message-report">
-                            <button type="button" class="button secondary report-message-btn"
-                                    th:attr="data-user-id=${chat.sender.id}, data-user-name=${chat.sender.name}"
-                                    onclick="openReportModal(this.getAttribute('data-user-id'), this.getAttribute('data-user-name'))">通報</button>
-                        </div>
-                    </div>
+            
+            <div class="chat-box" id="chatBox">
+                <div th:each="chat : ${chats}" class="chat-message" 
+                     th:classappend="${chat.sender.email == #authentication.name ? 'my-message' : 'other-message'}">
+                     
+                     <span class="sender-name" th:text="${chat.sender.name}"></span>
+                     <span class="message-time" th:text="${#temporals.format(chat.createdAt, 'yyyy/MM/dd HH:mm')}"></span>
+                     <p th:text="${chat.message}"></p>
+                     
+                     <div sec:authorize="isAuthenticated()" th:if="${chat.sender.email != #authentication.name}">
+                        <button type="button" style="font-size: 10px; color: #888; background: none; border: none; cursor: pointer; text-decoration: underline;"
+                                th:attr="data-user-id=${chat.sender.id}, data-user-name=${chat.sender.name}"
+                                onclick="openReportModal(this.getAttribute('data-user-id'), this.getAttribute('data-user-name'))">通報</button>
+                     </div>
                 </div>
-                <div th:if="${#lists.isEmpty(chats)}">
+                
+                <div id="noMessage" th:if="${#lists.isEmpty(chats)}">
                     <p>まだチャットメッセージはありません。</p>
                 </div>
             </div>
 
-            <form id="chatForm" th:action="@{/chat/{itemId}(itemId=${item.id})}" method="post" class="chat-form">
-                <textarea name="message" placeholder="メッセージを入力してください" required></textarea>
+            <form id="chatForm" class="chat-form">
+                <textarea id="messageInput" name="message" placeholder="メッセージを入力してください" required></textarea>
                 <button type="submit" id="chatSubmitBtn">送信</button>
             </form>
         </div>
+        
+        <script th:if="${isChatPage != null and isChatPage}" th:inline="javascript">
+            /*<![CDATA[*/
+            const itemId = /*[[${item.id}]]*/ 0;
+            const currentUserEmail = /*[[${#authentication.name}]]*/ '';
+            
+            let stompClient = null;
+
+            function connect() {
+                const socket = new SockJS('/ws-chat'); 
+                stompClient = Stomp.over(socket);
+                stompClient.debug = null; 
+
+                stompClient.connect({}, function (frame) {
+                    console.log('Connected: ' + frame);
+                    stompClient.subscribe('/topic/chat/' + itemId, function (messageOutput) {
+                        showMessage(JSON.parse(messageOutput.body));
+                    });
+                }, function(error) {
+                    console.error('Connection lost', error);
+                });
+            }
+
+            function sendMessage(event) {
+                event.preventDefault();
+                const messageInput = document.getElementById('messageInput');
+                const messageContent = messageInput.value.trim();
+
+                if (messageContent && stompClient) {
+                    const chatMessage = {
+                        itemId: itemId,
+                        message: messageContent
+                    };
+                    stompClient.send("/app/chat/" + itemId + "/send", {}, JSON.stringify(chatMessage));
+                    messageInput.value = '';
+                }
+            }
+
+            function showMessage(message) {
+                const chatBox = document.getElementById('chatBox');
+                const noMessageDiv = document.getElementById('noMessage');
+                if (noMessageDiv) noMessageDiv.style.display = 'none';
+
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('chat-message');
+                
+                if (message.senderEmail === currentUserEmail) {
+                    messageDiv.classList.add('my-message');
+                } else {
+                    messageDiv.classList.add('other-message');
+                }
+
+                const senderSpan = document.createElement('span');
+                senderSpan.classList.add('sender-name');
+                senderSpan.textContent = message.senderName;
+
+                const timeSpan = document.createElement('span');
+                timeSpan.classList.add('message-time');
+                timeSpan.textContent = message.createdAt;
+
+                const p = document.createElement('p');
+                p.textContent = message.message;
+
+                messageDiv.appendChild(senderSpan);
+                messageDiv.appendChild(timeSpan);
+                messageDiv.appendChild(p);
+
+                // 通報ボタンの動的生成（相手メッセージの場合）
+                if (message.senderEmail !== currentUserEmail) {
+                    const reportBtn = document.createElement('button');
+                    reportBtn.type = 'button';
+                    reportBtn.style.cssText = 'font-size: 10px; color: #888; background: none; border: none; cursor: pointer; text-decoration: underline;';
+                    reportBtn.textContent = '通報';
+                    
+                    // ユーザーIDはメッセージに含まれている必要があるが、なければ今回は省略
+                    if(message.senderId) {
+                         reportBtn.onclick = function() {
+                             openReportModal(message.senderId, message.senderName);
+                         };
+                         messageDiv.appendChild(reportBtn);
+                    }
+                }
+
+                chatBox.appendChild(messageDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                connect();
+                document.getElementById('chatForm').addEventListener('submit', sendMessage);
+                const chatBox = document.getElementById('chatBox');
+                if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+            });
+            /*]]>*/
+        </script>
 
         <div class="button-group" style="margin-top: 20px;">
             <a th:href="@{/items}" class="button secondary">商品一覧に戻る</a>
         </div>
     </div>
-	<script>
-		const openBtn = document.getElementById('openForm');
-		const overlay = document.getElementById('overlay');
-		const closeBtn = document.getElementById('closeForm');
 
-		// 通報モーダルの開閉（出品者を通報する場合はそのまま表示）
-		if (openBtn) {
-			openBtn.onclick = function() {
-				overlay.style.display = 'flex';
-			};
-		}
+    <script>
+        const openBtn = document.getElementById('openForm');
+        const overlay = document.getElementById('overlay');
+        const closeBtn = document.getElementById('closeForm');
 
-		// メッセージ投稿者を通報するときにモーダルを開く（formの送信先と表示名を切り替え）
-		function openReportModal(userId, userName) {
-			const form = document.getElementById('reportForm');
-			const nameEl = document.getElementById('reportTargetName');
-			if (form && nameEl) {
-				form.action = '/report/' + userId;
-				nameEl.textContent = userName + 'を通報';
-			}
-			overlay.style.display = 'flex';
-		}
+        if (openBtn) {
+            openBtn.onclick = function() { overlay.style.display = 'flex'; };
+        }
 
-		if (closeBtn) {
-			closeBtn.onclick = function() {
-				overlay.style.display = 'none';
-			};
-		}
+        function openReportModal(userId, userName) {
+            const form = document.getElementById('reportForm');
+            const nameEl = document.getElementById('reportTargetName');
+            if (form && nameEl) {
+                form.action = '/report/' + userId;
+                nameEl.textContent = userName + 'を通報';
+            }
+            overlay.style.display = 'flex';
+        }
 
-		overlay.onclick = function(e) {
-			if (e.target === overlay) {
-				overlay.style.display = 'none';
-			}
-		};
+        if (closeBtn) {
+            closeBtn.onclick = function() { overlay.style.display = 'none'; };
+        }
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.style.display = 'none'; };
 
-		// 管理者用：商品削除モーダルの開閉
-		const openAdminDeleteBtn = document.getElementById('openAdminDeleteForm');
-		const overlayAdminDelete = document.getElementById('overlayAdminDelete');
-		const closeAdminDeleteBtn = document.getElementById('closeAdminDeleteForm');
-		if (openAdminDeleteBtn && overlayAdminDelete) {
-			openAdminDeleteBtn.onclick = function() {
-				overlayAdminDelete.style.display = 'flex';
-			};
-		}
-		if (closeAdminDeleteBtn && overlayAdminDelete) {
-			closeAdminDeleteBtn.onclick = function() {
-				overlayAdminDelete.style.display = 'none';
-			};
-		}
-		if (overlayAdminDelete) {
-			overlayAdminDelete.onclick = function(e) {
-				if (e.target === overlayAdminDelete) {
-					overlayAdminDelete.style.display = 'none';
-				}
-			};
-		}
+        // 管理者用モーダル
+        const openAdminDeleteBtn = document.getElementById('openAdminDeleteForm');
+        const overlayAdminDelete = document.getElementById('overlayAdminDelete');
+        const closeAdminDeleteBtn = document.getElementById('closeAdminDeleteForm');
+        if (openAdminDeleteBtn && overlayAdminDelete) {
+            openAdminDeleteBtn.onclick = function() { overlayAdminDelete.style.display = 'flex'; };
+        }
+        if (closeAdminDeleteBtn && overlayAdminDelete) {
+            closeAdminDeleteBtn.onclick = function() { overlayAdminDelete.style.display = 'none'; };
+        }
+        if (overlayAdminDelete) {
+            overlayAdminDelete.onclick = function(e) {
+                if (e.target === overlayAdminDelete) overlayAdminDelete.style.display = 'none';
+            };
+        }
 
-		// チャット送信ボタン：送信後は画面遷移するまで押せないようにする
-		const chatForm = document.getElementById('chatForm');
-		const chatSubmitBtn = document.getElementById('chatSubmitBtn');
-		if (chatForm && chatSubmitBtn) {
-			let chatSubmitting = false;
-			chatForm.addEventListener('submit', function(e) {
-				if (chatSubmitting) {
-					e.preventDefault();
-					return false;
-				}
-				chatSubmitting = true;
-				chatSubmitBtn.disabled = true;
-				chatSubmitBtn.textContent = '送信中...';
-				chatSubmitBtn.style.opacity = '0.6';
-				chatSubmitBtn.style.cursor = 'not-allowed';
-			});
-		}
+        // 画像切り替え系
+        function changeMainImage(thumbnail) {
+            const mainImage = document.getElementById('mainImage');
+            const imageUrl = thumbnail.getAttribute('data-image-url');
+            if (mainImage && imageUrl) mainImage.src = imageUrl;
+            document.querySelectorAll('.thumbnail-item').forEach(item => item.classList.remove('active'));
+            thumbnail.classList.add('active');
+        }
 
-		// メイン画像を変更する関数
-		function changeMainImage(thumbnail) {
-			const mainImage = document.getElementById('mainImage');
-			const imageUrl = thumbnail.getAttribute('data-image-url');
-			
-			if (mainImage && imageUrl) {
-				mainImage.src = imageUrl;
-			}
-			
-			// アクティブなサムネイルを更新
-			document.querySelectorAll('.thumbnail-item').forEach(item => {
-				item.classList.remove('active');
-			});
-			thumbnail.classList.add('active');
-		}
-
-		// 画像モーダル表示関数
-		function showImageModal(imageUrl) {
-			const modal = document.createElement('div');
-			modal.style.position = 'fixed';
-			modal.style.top = '0';
-			modal.style.left = '0';
-			modal.style.width = '100%';
-			modal.style.height = '100%';
-			modal.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-			modal.style.display = 'flex';
-			modal.style.justifyContent = 'center';
-			modal.style.alignItems = 'center';
-			modal.style.zIndex = '2000';
-			modal.style.cursor = 'pointer';
-			
-			const img = document.createElement('img');
-			img.src = imageUrl;
-			img.style.maxWidth = '90%';
-			img.style.maxHeight = '90%';
-			img.style.objectFit = 'contain';
-			
-			modal.appendChild(img);
-			document.body.appendChild(modal);
-			
-			modal.onclick = function() {
-				document.body.removeChild(modal);
-			};
-		}
-	</script>
+        function showImageModal(imageUrl) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;justify-content:center;align-items:center;z-index:2000;cursor:pointer;';
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.style.cssText = 'max-width:90%;max-height:90%;object-fit:contain;';
+            modal.appendChild(img);
+            document.body.appendChild(modal);
+            modal.onclick = function() { document.body.removeChild(modal); };
+        }
+    </script>
 </body>
 </html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>マイページ - フリマアプリ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<header th:insert="~{fragments/layout :: header}"></header>
+
+<div class="container-wrapper">
+    <section class="stamp-section">
+        <h2 class="stamp-title">Login Bonus Chart</h2>
+        
+        <div class="calendar-wrapper">
+            <div class="calendar-header">
+                <button id="prevMonth" class="nav-btn">◀</button>
+                <span id="currentMonthLabel">Loading...</span>
+                <button id="nextMonth" class="nav-btn">▶</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                </div>
+        </div>
+        
+        <p id="errorMessage" style="color: #ff6b6b; font-size: 0.8rem; margin-top: 10px; display: none;"></p>
+    </section>
+</div>
+
+<style>
+    /* --- CSS変数のフォールバック定義 --- */
+    /* style.css が読み込めなくてもここが適用されます */
+    :root {
+        --bg-deep: #1a0b2e;
+        --gold: #d4af37;
+        --gold-glow: #f9e79f;
+        --text-main: #e0d8ff;
+        --border: rgba(212, 175, 55, 0.3);
+        --primary: #d4af37;
+        --text-muted: rgba(224, 216, 255, 0.6);
+    }
+
+    body {
+        /* 背景色を明示的に指定 */
+        background: radial-gradient(circle at center, #2e1a47 0%, #0d0417 100%);
+        color: var(--text-main);
+        font-family: 'Cormorant Garamond', serif;
+        min-height: 100vh;
+        margin: 0;
+    }
+
+    .container-wrapper {
+        padding: 40px 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* --- スタンプセクションのスタイル --- */
+    .stamp-section {
+        width: 100%;
+        max-width: 500px;
+        background: rgba(20, 10, 40, 0.7); /* 少し濃く */
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        backdrop-filter: blur(5px);
+    }
+    
+    .stamp-title {
+        color: var(--primary);
+        font-family: 'Cinzel', serif;
+        margin: 0 0 25px 0;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        font-size: 1.8rem;
+    }
+
+    .calendar-wrapper {
+        margin: 0 auto;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        color: var(--text-main);
+        font-family: 'Cinzel', serif;
+        font-size: 1.3rem;
+        letter-spacing: 0.05em;
+    }
+
+    .nav-btn {
+        background: transparent;
+        border: 1px solid var(--primary);
+        color: var(--primary);
+        border-radius: 50%;
+        width: 36px; height: 36px;
+        cursor: pointer;
+        transition: 0.3s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.8rem;
+    }
+    .nav-btn:hover {
+        background: var(--primary);
+        color: #0d0417;
+        box-shadow: 0 0 15px var(--primary);
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(212, 175, 55, 0.1);
+        border-radius: 4px;
+        color: var(--text-muted);
+        font-family: 'Cormorant Garamond', serif;
+        position: relative;
+        font-size: 1rem;
+        transition: 0.3s;
+    }
+
+    /* スタンプが押された日 */
+    .calendar-day.stamped {
+        background: rgba(212, 175, 55, 0.15);
+        border-color: var(--primary);
+        color: var(--gold-glow);
+        box-shadow: inset 0 0 10px rgba(212, 175, 55, 0.1);
+    }
+
+    /* スタンプエフェクト（疑似要素で紋章を表示） */
+    .calendar-day.stamped::after {
+        content: '☀'; /* 太陽の紋章 */
+        position: absolute;
+        font-size: 1.6rem;
+        color: var(--primary);
+        text-shadow: 0 0 8px var(--gold-glow);
+        animation: stampIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* 今日 */
+    .calendar-day.today {
+        border: 1px dashed var(--primary);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    @keyframes stampIn {
+        0% { transform: scale(3) rotate(-45deg); opacity: 0; }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const calendarGrid = document.getElementById('calendarGrid');
+        const currentMonthLabel = document.getElementById('currentMonthLabel');
+        const prevBtn = document.getElementById('prevMonth');
+        const nextBtn = document.getElementById('nextMonth');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let currentDate = new Date(); // 表示基準日
+        let stampedDates = []; // APIから取得したスタンプ日付リスト
+
+        // 1. スタンプデータを取得
+        // ※サーバー再起動を忘れていると、ここが 404 エラーになります
+        fetch('/api/stamps')
+            .then(res => {
+                if (!res.ok) throw new Error(`API Error: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                stampedDates = data; // ["2026-01-30", "2026-01-31", ...]
+                renderCalendar(currentDate);
+            })
+            .catch(err => {
+                console.error('Failed to fetch stamps:', err);
+                errorMessage.textContent = "データの取得に失敗しました。サーバーが起動しているか確認してください。";
+                errorMessage.style.display = 'block';
+                // エラーでもカレンダー枠だけは描画する
+                renderCalendar(currentDate);
+            });
+
+        // 2. カレンダー描画関数
+        function renderCalendar(date) {
+            calendarGrid.innerHTML = '';
+            
+            const year = date.getFullYear();
+            const month = date.getMonth(); // 0-11
+            
+            // ヘッダー表示
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                                "July", "August", "September", "October", "November", "December"];
+            currentMonthLabel.textContent = `${monthNames[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            
+            const startDayOfWeek = firstDay.getDay(); // 0(Sun) - 6(Sat)
+            const totalDays = lastDay.getDate();
+
+            // 曜日のヘッダーを追加
+            const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+            weekDays.forEach(day => {
+                const div = document.createElement('div');
+                div.className = 'calendar-day';
+                div.style.background = 'transparent';
+                div.style.border = 'none';
+                div.style.color = '#d4af37'; // Gold
+                div.style.fontWeight = 'bold';
+                div.textContent = day;
+                calendarGrid.appendChild(div);
+            });
+
+            // 空白セル
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'calendar-day';
+                emptyDiv.style.opacity = '0';
+                emptyDiv.style.pointerEvents = 'none';
+                calendarGrid.appendChild(emptyDiv);
+            }
+
+            // 日付セル
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            for (let d = 1; d <= totalDays; d++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                cell.textContent = d;
+
+                // 日付文字列を作成 (yyyy-MM-dd)
+                const checkDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+                if (checkDate === todayStr) {
+                    cell.classList.add('today');
+                }
+
+                if (stampedDates.includes(checkDate)) {
+                    cell.classList.add('stamped');
+                }
+
+                calendarGrid.appendChild(cell);
+            }
+        }
+
+        prevBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar(currentDate);
+        });
+        nextBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar(currentDate);
+        });
+    });
+</script>
+</body>
+</html>
