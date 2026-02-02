@@ -6,6 +6,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
+    <header th:insert="~{fragments/layout :: header}"></header>
     <div class="container">
         <h1 th:text="${item.id == null ? '商品出品' : '商品編集'}"></h1>
 
@@ -33,15 +34,207 @@
                 </select>
             </p>
             <p>
-                <label for="image">商品画像:</label>
-                <input type="file" id="image" name="image" accept="image/*">
-                <span th:if="${item.imageUrl}">現在の画像: <img th:src="${item.imageUrl}" style="width: 100px; height: auto;"></span>
+                <label for="images">商品画像（最大10枚）:</label>
+                <input type="file" id="images" name="images" accept="image/*" multiple>
+                <p style="font-size: 12px; color: #666; margin-top: 8px;">左上の画像がサムネになります。ドラッグして順番を入れ替えできます。</p>
+                <div id="imagePreviewContainer" class="image-preview-grid"></div>
+                <!-- 編集時：既存画像URLをJSに渡す -->
+                <div id="initialImageUrlsContainer" style="display:none;" th:if="${item.id != null and editImageUrls != null}">
+                    <span th:each="url : ${editImageUrls}" th:attr="data-url=${url}"></span>
+                </div>
             </p>
             <div class="button-group">
-                <button type="submit" th:text="${item.id == null ? '出品する' : '更新する'}"></button>
+                <button type="submit" id="submitBtn" th:text="${item.id == null ? '出品する' : '更新する'}"></button>
                 <a th:href="@{/items}" class="button secondary">キャンセル</a>
             </div>
         </form>
     </div>
+    <script>
+        const imageInput = document.getElementById('images');
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const isEditForm = !!document.querySelector('input[name="_method"][value="put"]');
+        let selectedFiles = [];
+        let draggedPreview = null;
+
+        function addDragHandlers(previewDiv) {
+            previewDiv.addEventListener('dragstart', function(e) {
+                draggedPreview = previewDiv;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', '');
+                previewDiv.style.opacity = '0.5';
+                previewDiv.style.cursor = 'grabbing';
+            });
+            previewDiv.addEventListener('dragend', function(e) {
+                previewDiv.style.opacity = '1';
+                previewDiv.style.cursor = 'grab';
+                draggedPreview = null;
+            });
+            previewDiv.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            });
+            previewDiv.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (!draggedPreview || draggedPreview === previewDiv) return;
+                const all = Array.from(previewContainer.querySelectorAll('.preview-item'));
+                const fromIdx = all.indexOf(draggedPreview);
+                const toIdx = all.indexOf(previewDiv);
+                if (fromIdx === -1 || toIdx === -1) return;
+                if (fromIdx < toIdx) {
+                    previewDiv.parentNode.insertBefore(draggedPreview, previewDiv.nextSibling);
+                } else {
+                    previewDiv.parentNode.insertBefore(draggedPreview, previewDiv);
+                }
+                syncSelectedFilesFromOrder();
+                updateFileInput();
+            });
+        }
+
+        function createExistingPreviewDiv(url) {
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'preview-item';
+            previewDiv.draggable = true;
+            previewDiv._existingUrl = url;
+            previewDiv.style.position = 'relative';
+            previewDiv.style.cursor = 'grab';
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.width = '100%';
+            img.style.aspectRatio = '1 / 1';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '5px';
+            img.style.border = '1px solid #ddd';
+            img.draggable = false;
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.textContent = '×';
+            removeBtn.className = 'preview-remove-btn';
+            removeBtn.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                previewDiv.remove();
+            });
+            previewDiv.appendChild(img);
+            previewDiv.appendChild(removeBtn);
+            addDragHandlers(previewDiv);
+            return previewDiv;
+        }
+
+        function createPreviewDiv(file, dataUrl) {
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'preview-item';
+            previewDiv.draggable = true;
+            previewDiv._file = file;
+            previewDiv.style.position = 'relative';
+            previewDiv.style.cursor = 'grab';
+            
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.style.width = '100%';
+            img.style.aspectRatio = '1 / 1';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '5px';
+            img.style.border = '1px solid #ddd';
+            img.draggable = false;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.textContent = '×';
+            removeBtn.className = 'preview-remove-btn';
+            removeBtn.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                selectedFiles = selectedFiles.filter(f => f !== file);
+                previewDiv.remove();
+                updateFileInput();
+            });
+            
+            previewDiv.appendChild(img);
+            previewDiv.appendChild(removeBtn);
+            addDragHandlers(previewDiv);
+            return previewDiv;
+        }
+
+        function syncSelectedFilesFromOrder() {
+            const items = previewContainer.querySelectorAll('.preview-item');
+            selectedFiles = Array.from(items).map(div => div._file).filter(Boolean);
+        }
+
+        // 編集時：既存画像をプレビューに表示
+        (function initExistingImages() {
+            const initialContainer = document.getElementById('initialImageUrlsContainer');
+            if (!initialContainer) return;
+            const spans = initialContainer.querySelectorAll('[data-url]');
+            spans.forEach(function(span) {
+                const url = span.getAttribute('data-url');
+                if (url) {
+                    previewContainer.appendChild(createExistingPreviewDiv(url));
+                }
+            });
+        })();
+
+        imageInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const currentCount = previewContainer.querySelectorAll('.preview-item').length;
+            if (currentCount + files.length > 10) {
+                alert('画像は最大10枚まで選択できます。');
+                e.target.value = '';
+                return;
+            }
+            files.forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+                selectedFiles.push(file);
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const previewDiv = createPreviewDiv(file, ev.target.result);
+                    previewContainer.appendChild(previewDiv);
+                    updateFileInput();
+                };
+                reader.readAsDataURL(file);
+            });
+            updateFileInput();
+        });
+
+        previewContainer.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        function updateFileInput() {
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(file => dataTransfer.items.add(file));
+            imageInput.files = dataTransfer.files;
+        }
+
+        // 出品ボタン：送信後は画面遷移するまで押せないようにする
+        const submitBtn = document.getElementById('submitBtn');
+        const form = document.querySelector('form');
+        let isSubmitting = false;
+
+        form.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            if (isEditForm) {
+                form.querySelectorAll('input[name="existingImageUrls"]').forEach(function(el) { el.remove(); });
+                const order = Array.from(previewContainer.querySelectorAll('.preview-item'));
+                order.forEach(function(div) {
+                    if (div._existingUrl) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'existingImageUrls';
+                        input.value = div._existingUrl;
+                        form.appendChild(input);
+                    }
+                });
+            }
+
+            isSubmitting = true;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '送信中...';
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+        });
+    </script>
 </body>
 </html>

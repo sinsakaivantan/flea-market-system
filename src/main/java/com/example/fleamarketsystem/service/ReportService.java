@@ -1,19 +1,19 @@
 package com.example.fleamarketsystem.service;
 
-import java.io.IOException;
-
 import org.springframework.stereotype.Service;
 
-import com.example.fleamarketsystem.entity.Admin;
-import com.example.fleamarketsystem.repository.AdminRepository;
+import com.example.fleamarketsystem.entity.UserComplaint;
+import com.example.fleamarketsystem.repository.UserComplaintRepository;
 
 @Service
 public class ReportService {
-	private final AdminRepository adminRepository;
-	public ReportService(AdminRepository adminRepository) {
-        this.adminRepository = adminRepository;
-    }
-	 public Admin saveAdmin(Admin admin) throws IOException {
-	        return adminRepository.save(admin);
-	    }
+	private final UserComplaintRepository userComplaintRepository;
+
+	public ReportService(UserComplaintRepository userComplaintRepository) {
+		this.userComplaintRepository = userComplaintRepository;
+	}
+
+	public UserComplaint saveUserComplaint(UserComplaint complaint) {
+		return userComplaintRepository.save(complaint);
+	}
 }

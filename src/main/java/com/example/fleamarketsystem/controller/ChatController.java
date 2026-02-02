@@ -46,8 +46,18 @@ public class ChatController {
                 .orElseThrow(() -> new RuntimeException("Item not found"));
         model.addAttribute("item", item);
         model.addAttribute("chats", chatService.getChatMessagesByItem(itemId));
-        
-        // ログインユーザー情報をテンプレートに渡す（JSで自分のメッセージか判定するため）
+
+        model.addAttribute("isChatPage", true); // Flag to indicate this is the chat page
+
+        // Add seller's average rating（マイページ・ユーザー詳細と同じ0.5刻みで表示）
+        reviewService.getAverageRatingForSeller(item.getSeller())
+                .ifPresent(avg -> {
+                    double rounded = Math.round(avg * 2.0) / 2.0;
+                    model.addAttribute("sellerAverageRating", String.format("%.1f", rounded));
+                });
+
+        // Add favorite status and count
+        model.addAttribute("favoriteCount", favoriteService.getFavoriteCountByItem(item));
         if (userDetails != null) {
              User currentUser = userService.getUserByEmail(userDetails.getUsername()).orElseThrow();
              model.addAttribute("currentUserEmail", currentUser.getEmail());

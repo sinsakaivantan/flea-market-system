@@ -13,8 +13,11 @@ import org.springframework.security.core.context.SecurityContextHolder; // è¿½åŠ
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+
 
 import com.example.fleamarketsystem.entity.Ban;
 import com.example.fleamarketsystem.entity.User;
@@ -72,6 +75,7 @@ public class SecurityConfig {
         return http.build();
     }
     private AuthenticationSuccessHandler customSuccessHandler() {
+
         return (request, response, authentication) -> {
             String username = authentication.getName();
             User user = userRepository.findByEmail(username).orElseThrow();
@@ -107,3 +111,4 @@ public class SecurityConfig {
         };
     }
 }
+

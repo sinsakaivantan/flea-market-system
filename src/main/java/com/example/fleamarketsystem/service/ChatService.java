@@ -41,23 +41,13 @@ public class ChatService {
 
         Chat savedChat = chatRepository.save(chat);
 
-        // Send email notification to the other party in the chat
-        User receiver = null;
+        // 送信者が出品者の場合はメールを送らない
         if (item.getSeller().equals(sender)) {
-            // If sender is seller, receiver is buyer (if item is sold)
-            // This logic needs to be refined if chat is before purchase
-            // For now, assuming chat is always between seller and buyer of a purchased item
-            // Or, if chat is before purchase, the other party is always the seller
-            // For simplicity, let's assume the chat is always between the item's seller and the current sender's counterpart
-            // If sender is seller, receiver is the buyer of the item (if any order exists)
-            // If sender is buyer, receiver is the seller of the item
-            receiver = item.getSeller(); // Default to seller if sender is buyer
-            // If sender is seller, we need to find the buyer from an order associated with this item
-            // This requires more complex logic, for now, let's simplify: chat is always with the seller
-        } else { // Sender is buyer
-            receiver = item.getSeller();
+            return savedChat;
         }
 
+        // Send email notification to the other party (seller) when buyer sends a message
+        User receiver = item.getSeller();
         if (receiver != null && receiver.getEmail() != null && !receiver.getEmail().isEmpty()) {
             String subject = String.format("商品「%s」に関する新しいメッセージ", item.getName());
             String notificationMessage = String.format("商品「%s」に関する新しいメッセージが届きました！\n\n送信者: %s\nメッセージ: %s",

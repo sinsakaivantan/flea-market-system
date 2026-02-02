@@ -1,4 +1,1 @@
 -- データ初期化スクリプト
--- 注意: application.propertiesでspring.sql.init.mode=neverに設定されているため、
--- このファイルは実行されません。
--- データベースへの直接的な影響はありません。

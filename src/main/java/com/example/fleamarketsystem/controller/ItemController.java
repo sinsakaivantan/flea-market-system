@@ -92,20 +92,32 @@ public class ItemController {
 		if (item.isEmpty()) {
 			return "redirect:/items"; // Item not found
 		}
-		model.addAttribute("item", item.get());
-		model.addAttribute("chats", chatService.getChatMessagesByItem(id));
+		Item currentItem = item.get();
+		model.addAttribute("item", currentItem);
 
-		// Add seller's average rating
-		reviewService.getAverageRatingForSeller(item.get().getSeller())
-				.ifPresent(avg -> model.addAttribute("sellerAverageRating", String.format("%.1f", avg)));
+		// Add seller's average rating（マイページ・ユーザー詳細と同じ0.5刻みで表示）
+		reviewService.getAverageRatingForSeller(currentItem.getSeller())
+				.ifPresent(avg -> {
+					double rounded = Math.round(avg * 2.0) / 2.0;
+					model.addAttribute("sellerAverageRating", String.format("%.1f", rounded));
+				});
+
+		// Get seller's active items (excluding current item, max 4)
+		List<Item> sellerActiveItems = itemService.getActiveItemsBySeller(currentItem.getSeller())
+				.stream()
+				.filter(i -> !i.getId().equals(id))
+				.limit(4)
+				.toList();
+		model.addAttribute("sellerActiveItems", sellerActiveItems);
+		model.addAttribute("favoriteCount", favoriteService.getFavoriteCountByItem(currentItem));
 
 		if (userDetails != null) {
 			User currentUser = userService.getUserByEmail(userDetails.getUsername())
 					.orElseThrow(() -> new RuntimeException("User not found"));
 			model.addAttribute("isFavorited", favoriteService.isFavorited(currentUser, id));
-			if (!item.get().getSeller().getId().equals(currentUser.getId())) {
+			if (!currentItem.getSeller().getId().equals(currentUser.getId())) {
 				model.addAttribute("isFollowing",
-						followService.isFollowing(currentUser, item.get().getSeller()));
+						followService.isFollowing(currentUser, currentItem.getSeller()));
 			}
 		}
 		return "item_detail";
@@ -125,12 +137,21 @@ public class ItemController {
 			@RequestParam("description") String description,
 			@RequestParam("price") BigDecimal price,
 			@RequestParam("categoryId") Long categoryId,
-			@RequestParam(value = "image", required = false) MultipartFile imageFile,
+			@RequestParam(value = "images", required = false) List<MultipartFile> imageFiles,
 			RedirectAttributes redirectAttributes) {
 
 		if (price.compareTo(MIN_PRICE) < 0 || price.compareTo(MAX_PRICE) > 0) {
 			redirectAttributes.addFlashAttribute("errorMessage", "価格は50円以上、99,999,999.99円以下にしてください。");
 			return "redirect:/items/new";
+		}
+
+		// 画像数のチェック（最大10枚）
+		if (imageFiles != null) {
+			long imageCount = imageFiles.stream().filter(file -> file != null && !file.isEmpty()).count();
+			if (imageCount > 10) {
+				redirectAttributes.addFlashAttribute("errorMessage", "画像は最大10枚まで選択できます。");
+				return "redirect:/items/new";
+			}
 		}
 
 		User seller = userService.getUserByEmail(userDetails.getUsername())
@@ -146,7 +167,7 @@ public class ItemController {
 		item.setCategory(category);
 
 		try {
-			itemService.saveItem(item, imageFile);
+			itemService.saveItem(item, imageFiles);
 			redirectAttributes.addFlashAttribute("successMessage", "商品を出品しました！");
 		} catch (IOException e) {
 			redirectAttributes.addFlashAttribute("errorMessage", "画像のアップロードに失敗しました: " + e.getMessage());
@@ -162,8 +183,13 @@ public class ItemController {
 		if (item.isEmpty()) {
 			return "redirect:/items";
 		}
-		model.addAttribute("item", item.get());
+		Item it = item.get();
+		model.addAttribute("item", it);
 		model.addAttribute("categories", categoryService.getAllCategories());
+		List<String> editImageUrls = (it.getImageUrls() != null && !it.getImageUrls().isEmpty())
+			? it.getImageUrls()
+			: (it.getImageUrl() != null ? java.util.Collections.singletonList(it.getImageUrl()) : java.util.Collections.emptyList());
+		model.addAttribute("editImageUrls", editImageUrls);
 		return "item_form";
 	}
 
@@ -175,11 +201,19 @@ public class ItemController {
 			@RequestParam("description") String description,
 			@RequestParam("price") BigDecimal price,
 			@RequestParam("categoryId") Long categoryId,
-			@RequestParam(value = "image", required = false) MultipartFile imageFile,
+			@RequestParam(value = "existingImageUrls", required = false) List<String> existingImageUrls,
+			@RequestParam(value = "images", required = false) List<MultipartFile> imageFiles,
 			RedirectAttributes redirectAttributes) {
 
 		if (price.compareTo(MIN_PRICE) < 0 || price.compareTo(MAX_PRICE) > 0) {
 			redirectAttributes.addFlashAttribute("errorMessage", "価格は50円以上、99,999,999.99円以下にしてください。");
+			return "redirect:/items/{id}/edit";
+		}
+
+		int existingCount = (existingImageUrls != null) ? existingImageUrls.size() : 0;
+		long newCount = (imageFiles != null) ? imageFiles.stream().filter(file -> file != null && !file.isEmpty()).count() : 0;
+		if (existingCount + newCount > 10) {
+			redirectAttributes.addFlashAttribute("errorMessage", "画像は最大10枚まで選択できます。");
 			return "redirect:/items/{id}/edit";
 		}
 
@@ -190,7 +224,6 @@ public class ItemController {
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
 		if (!existingItem.getSeller().getId().equals(currentUser.getId())) {
-			// Only seller can edit their item
 			redirectAttributes.addFlashAttribute("errorMessage", "この商品は編集できません。");
 			return "redirect:/items";
 		}
@@ -204,7 +237,7 @@ public class ItemController {
 		existingItem.setCategory(category);
 
 		try {
-			itemService.saveItem(existingItem, imageFile);
+			itemService.saveItemWithExistingAndNew(existingItem, existingImageUrls, imageFiles);
 			redirectAttributes.addFlashAttribute("successMessage", "商品を更新しました！");
 		} catch (IOException e) {
 			redirectAttributes.addFlashAttribute("errorMessage", "画像のアップロードに失敗しました: " + e.getMessage());
@@ -241,7 +274,6 @@ public class ItemController {
 				.orElseThrow(() -> new RuntimeException("User not found"));
 		try {
 			favoriteService.addFavorite(currentUser, itemId);
-			redirectAttributes.addFlashAttribute("successMessage", "お気に入りに追加しました！");
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 		}
@@ -255,7 +287,6 @@ public class ItemController {
 				.orElseThrow(() -> new RuntimeException("User not found"));
 		try {
 			favoriteService.removeFavorite(currentUser, itemId);
-			redirectAttributes.addFlashAttribute("successMessage", "お気に入りから削除しました。");
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 		}

@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequiredArgsConstructor
 public class LoginController {
-    
+   
     private final UserRepository userRepository;
     private final ReportService reportService;
 
@@ -90,3 +90,4 @@ public class LoginController {
         return "redirect:/login?objection_sent";
     }
 }
+

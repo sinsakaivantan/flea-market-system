@@ -28,10 +28,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 		// usernameParameter("email") にしているので username はメール
 		User u = users.findByEmailIgnoreCase(username)
 				.orElseThrow(() -> {
-					log.error("User not found: {}", username);
+					log.debug("User not found: {}", username);
 					return new UsernameNotFoundException("User not found: " + username);
 				});
-
 		if (!u.isEnabled()) {
 			log.warn("Account disabled for user: {}", username);
 			throw new DisabledException("Account disabled");
@@ -40,6 +39,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 			log.warn("Account banned for user: {}", username);
 			throw new DisabledException("Account banned");
 		}*/
+
 
 		return new org.springframework.security.core.userdetails.User(
 				u.getEmail(),

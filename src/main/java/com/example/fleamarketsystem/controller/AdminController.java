@@ -16,10 +16,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.fleamarketsystem.entity.Admin;
+import com.example.fleamarketsystem.entity.Item;
 import com.example.fleamarketsystem.repository.AdminRepository;
 import com.example.fleamarketsystem.service.AppOrderService;
+import com.example.fleamarketsystem.service.EmailService;
 import com.example.fleamarketsystem.service.ItemService;
 import com.example.fleamarketsystem.service.RenrakuService;
 
@@ -35,12 +38,15 @@ public class AdminController {
 	private final ItemService itemService;
 	private final AppOrderService appOrderService;
 	private final RenrakuService renrakuService;
+	private final EmailService emailService;
 
-	public AdminController(ItemService itemService, AppOrderService appOrderService,RenrakuService renrakuService, AdminRepository adminRepository) {
+	public AdminController(ItemService itemService, AppOrderService appOrderService, RenrakuService renrakuService,
+			AdminRepository adminRepository, EmailService emailService) {
 		this.itemService = itemService;
 		this.appOrderService = appOrderService;
 		this.renrakuService = renrakuService;
 		this.adminRepository = adminRepository;
+		this.emailService = emailService;
 	}
 
 	@GetMapping("/items")
@@ -71,9 +77,28 @@ public class AdminController {
 	}
 	
 	@PostMapping("/items/{id}/delete")
-	public String deleteItemByAdmin(@PathVariable("id") Long itemId) {
+	public String deleteItemByAdmin(@PathVariable("id") Long itemId,
+			@RequestParam("reason") String reason,
+			RedirectAttributes redirectAttributes) {
+		Item item = itemService.getItemById(itemId).orElse(null);
+		if (item == null) {
+			redirectAttributes.addFlashAttribute("errorMessage", "商品が見つかりません。");
+			return "redirect:/items";
+		}
+		String sellerEmail = item.getSeller().getEmail();
+		String itemName = item.getName();
 		itemService.deleteItem(itemId);
-		return "redirect:/admin/items?success=deleted";
+
+		String subject = "【フリマ】商品が削除されました";
+		String body = "お客様が出品された以下の商品は、運営により削除されました。\n\n"
+				+ "商品名: " + itemName + "\n\n"
+				+ "削除理由:\n" + (reason != null ? reason : "") + "\n\n"
+				+ "何度も繰り返されるとアカウントを停止される可能性があります。\n\n"
+				+ "ご不明な点は運営までお問い合わせください。";
+		emailService.sendEmail(sellerEmail, subject, body);
+
+		redirectAttributes.addFlashAttribute("successMessage", "商品を削除し、出品者にメールで通知しました。");
+		return "redirect:/items";
 	}
 
 	@GetMapping("/statistics")
