@@ -1,271 +1,47 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ja">
-<head>
-    <head th:replace="~{fragments/layout :: head('Celestial User Registry')}"></head>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --bg-deep: #1a0b2e;
-            --gold: #d4af37;
-            --gold-faint: rgba(212, 175, 55, 0.2);
-            --text-main: #483d8b;
-            --glass-panel: rgba(20, 10, 40, 0.85); /* 読みやすさのため少し濃く */
-        }
 
-        /* ページ全体のスタイル上書き */
-        body {
-            background: radial-gradient(circle at center, #2e1a47 0%, #0d0417 100%);
-            color: var(--text-main);
-            font-family: 'Cormorant Garamond', serif;
-            min-height: 100vh;
-            position: relative;
-            /* overflow: hidden;  ←スクロールが必要なページなので隠さない */
-        }
+	<head th:replace="~{fragments/layout :: head('ページタイトル')}"></head>
+	<body>
+	  <header th:insert="~{fragments/layout :: header}"></header>
+	  <!-- 以降そのページ固有の内容 -->
 
-        /* --- 背景装飾 (固定配置) --- */
-        #constellation {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: -2;
-            pointer-events: none;
-        }
+<main class="container">
+  <h1>ユーザー管理</h1>
 
-        .zodiac-bg {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80vw; height: 80vw; /* 画面いっぱいに */
-            max-width: 800px; max-height: 800px;
-            border: 1px dashed var(--gold-faint);
-            border-radius: 50%;
-            z-index: -1;
-            opacity: 0.3;
-            animation: rotateBg 120s linear infinite;
-            pointer-events: none;
-        }
-        @keyframes rotateBg { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+  <p style="margin: 10px 0;">
+    <form th:action="@{/admin/users/complaints}" method="get" style="display:inline;">
+      <button type="submit" class="button">通報一覧</button>
+    </form>
+  </p>
 
-        /* --- メインコンテナ --- */
-        .container {
-            position: relative;
-            z-index: 1;
-            margin-top: 40px;
-            margin-bottom: 40px;
-            padding: 40px;
-            background: var(--glass-panel);
-            border: 1px solid var(--gold-faint);
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-            /* 幅を少し広げる */
-            max-width: 1200px; 
-            margin-left: auto; margin-right: auto;
-        }
+  <form method="get" class="toolbar">
+    <input type="text" name="q" th:value="${q}" placeholder="検索（名前/メール）">
+    <select name="sort">
+      <option th:value="id"     th:selected="${sort=='id'}">ID</option>
+      <option th:value="name"   th:selected="${sort=='name'}">名前</option>
+      <option th:value="email"  th:selected="${sort=='email'}">メール</option>
+      <option th:value="banned" th:selected="${sort=='banned'}">BAN状況</option>
+    </select>
+    <button type="submit">絞り込み</button>
+  </form>
 
-        /* --- タイトル --- */
-        h1 {
-            font-family: 'Cinzel', serif;
-            color: var(--gold);
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 40px;
-            text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
-            border-bottom: 1px solid var(--gold-faint);
-            padding-bottom: 20px;
-            letter-spacing: 0.1em;
-        }
-
-        /* --- 検索ツールバー --- */
-        .toolbar {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-bottom: 30px;
-            align-items: center;
-        }
-
-        /* 入力フォーム類 */
-        input[type="text"], select {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--gold-faint);
-            color: var(--gold);
-            padding: 8px 15px;
-            font-family: 'Cinzel', serif;
-            font-size: 1rem;
-            outline: none;
-            transition: 0.3s;
-        }
-        input[type="text"]:focus, select:focus {
-            border-color: var(--gold);
-            box-shadow: 0 0 10px var(--gold-faint);
-        }
-        ::placeholder { color: rgba(212, 175, 55, 0.4); font-family: 'Cormorant Garamond', serif; }
-
-        /* ボタン */
-        button {
-            background: transparent;
-            border: 1px solid var(--gold);
-            color: var(--gold);
-            font-family: 'Cinzel', serif;
-            padding: 8px 25px;
-            cursor: pointer;
-            transition: 0.4s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        button:hover {
-            background: var(--gold);
-            color: #000;
-            box-shadow: 0 0 15px var(--gold);
-        }
-
-        /* --- テーブル装飾 --- */
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        .table thead th {
-            font-family: 'Cinzel', serif;
-            color: var(--gold);
-            border-bottom: 2px solid var(--gold);
-            padding: 15px;
-            text-align: left;
-            font-weight: normal;
-            letter-spacing: 0.05em;
-        }
-
-        .table tbody tr {
-            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-            transition: background 0.3s;
-        }
-
-        .table tbody tr:hover {
-            background: rgba(212, 175, 55, 0.05); /* カーソルを合わせると淡く光る */
-        }
-
-        .table td {
-            padding: 15px;
-            color: var(--text-main);
-            font-size: 1.1rem;
-        }
-
-        /* リンクの装飾 */
-        .table td a {
-            color: var(--gold);
-            text-decoration: none;
-            border-bottom: 1px dotted var(--gold);
-            transition: 0.3s;
-        }
-        .table td a:hover {
-            color: #fff;
-            text-shadow: 0 0 5px var(--gold);
-            border-bottom-style: solid;
-        }
-        
-    </style>
-</head>
-<body>
-    
-    <canvas id="constellation"></canvas>
-    <div class="zodiac-bg"></div>
-
-    <header th:insert="~{fragments/layout :: header}"></header>
-
-    <main class="container">
-        <h1>ユーザー管理</h1> <form method="get" class="toolbar">
-            <input type="text" name="q" th:value="${q}" placeholder="Search Name/Email...">
-            <select name="sort">
-                <option th:value="id"     th:selected="${sort=='id'}">Sort by ID</option>
-                <option th:value="name"   th:selected="${sort=='name'}">Name</option>
-                <option th:value="email"  th:selected="${sort=='email'}">Email</option>
-                <option th:value="banned" th:selected="${sort=='banned'}">Status</option>
-            </select>
-            <button type="submit">Filter</button>
-        </form>
-
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email Address</th>
-                    <th>Role</th>
-                    <th>Active</th>
-                    <th>Ban Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="u : ${users}">
-                    <td th:text="${u.id}"></td>
-                    <td th:text="${u.name}"></td>
-                    <td th:text="${u.email}"></td>
-                    <td>
-                        <span th:text="${u.role}" style="font-size: 0.9em; opacity: 0.8;"></span>
-                    </td>
-                    <td th:text="${u.enabled ? 'Yes' : 'No'}"
-                        th:style="${u.enabled ? 'color:#aaffaa' : 'color:#ffaaaa'}"></td>
-                    <td th:text="${u.banned ? 'BANNED' : '-'}"
-                        th:style="${u.banned ? 'color:#ff5555; text-shadow: 0 0 5px red;' : ''}"></td>
-                    <td><a th:href="@{|/admin/users/${u.id}|}">Detail</a></td>
-                </tr>
-            </tbody>
-        </table>
-    </main>
-
-    <script>
-        const canvas = document.getElementById('constellation');
-        const ctx = canvas.getContext('2d');
-        let width, height;
-        let stars = [];
-
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-        }
-
-        class Star {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 1.5;
-                this.alpha = Math.random();
-                this.direction = Math.random() > 0.5 ? 0.005 : -0.005;
-            }
-            update() {
-                this.alpha += this.direction;
-                if (this.alpha >= 1 || this.alpha <= 0.1) this.direction *= -1;
-            }
-            draw() {
-                ctx.globalAlpha = this.alpha;
-                ctx.fillStyle = Math.random() > 0.9 ? '#d4af37' : '#ffffff';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function init() {
-            resize();
-            for(let i=0; i<200; i++) stars.push(new Star());
-            loop();
-        }
-
-        function loop() {
-            ctx.clearRect(0, 0, width, height);
-            stars.forEach(star => { star.update(); star.draw(); });
-            requestAnimationFrame(loop);
-        }
-
-        window.addEventListener('resize', resize);
-        init();
-    </script>
+  <table class="table">
+    <thead>
+      <tr><th>ID</th><th>名前</th><th>メール</th><th>ロール</th><th>有効</th><th>BAN</th><th>詳細</th></tr>
+    </thead>
+    <tbody>
+      <tr th:each="u : ${users}">
+        <td th:text="${u.id}"></td>
+        <td th:text="${u.name}"></td>
+        <td th:text="${u.email}"></td>
+        <td th:text="${u.role}"></td>
+        <td th:text="${u.enabled}"></td>
+        <td th:text="${u.banned}"></td>
+        <td><a th:href="@{|/admin/users/${u.id}|}">詳細</a></td>
+      </tr>
+    </tbody>
+  </table>
+</main>
 </body>
 </html>
