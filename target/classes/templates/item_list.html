@@ -36,10 +36,9 @@
         <div class="item-grid">
             <div class="item-card" th:each="item : ${items.content}">
                 <a th:href="@{/items/{id}(id=${item.id})}">
-                    <img th:src="${item.imageUrl != null ? item.imageUrl : '/images/noimage.png'}" alt="商品画像">
+                    <img th:src="${item.firstImageUrl != null ? item.firstImageUrl : '/images/noimage.png'}" alt="商品画像">
                     <h3 th:text="${item.name}"></h3>
                     <p class="price" th:text="'¥' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}"></p>
-                    <p class="status" th:text="${item.status}"></p>
                 </a>
                 <div style="margin-top: 10px;">
                     <p style="font-size: 12px; margin: 5px 0;">出品者: <span th:text="${item.seller.name}"></span></p>
