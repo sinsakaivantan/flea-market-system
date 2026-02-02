@@ -8,8 +8,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,15 +25,20 @@ public class UserComplaint {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "reported_user_id", nullable = false)
-	private Long reportedUserId;
-
-	@Column(name = "reporter_user_id", nullable = false)
-	private Long reporterUserId;
+	@ManyToOne
+	@JoinColumn(name = "reported_user_id", nullable = false)
+	private User reportedUserId;
+	
+	@ManyToOne
+	@JoinColumn(name = "reporter_user_id", nullable = false)
+	private User reporterUserId;
 
 	@Column(nullable = false)
 	private String reason;
 
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt = LocalDateTime.now();
+	
+	@Column(nullable = true)
+	private Integer sikibetu = 0;
 }
