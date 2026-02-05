@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Singularity Arsenal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #050510;
+            color: #00ffcc;
+            font-family: 'Share Tech Mono', monospace;
+            padding: 20px;
+        }
+        h1 { border-bottom: 2px solid #00ffcc; padding-bottom: 10px; }
+        .currency { font-size: 1.5rem; color: #ffd700; margin-bottom: 20px; }
+        
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .item-card {
+            border: 1px solid #333;
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .item-card:hover { border-color: #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.2); }
+        
+        .item-type { font-size: 0.8rem; color: #888; }
+        .item-name { font-size: 1.2rem; font-weight: bold; margin: 5px 0; }
+        .item-desc { font-size: 0.9rem; color: #ccc; height: 50px; }
+        .item-price { color: #ffd700; font-weight: bold; margin: 10px 0; }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .btn-buy { background: #ffd700; color: #000; }
+        .btn-buy:hover { background: #ffaa00; }
+        
+        .btn-equip { background: #00ffcc; color: #000; }
+        .btn-equip:hover { background: #00aaaa; }
+        
+        .btn-equipped { background: #333; color: #fff; cursor: default; }
+        
+        .back-link { display: block; margin-top: 30px; color: #fff; text-decoration: none; }
+		
+		/* 画像用のスタイル追加 */
+		        .item-image {
+		            width: 100%;
+		            height: 150px;
+		            object-fit: contain; /* 枠内に収める */
+		            background-color: #000; /* 背景黒 */
+		            margin-bottom: 10px;
+		            border-bottom: 1px solid #333;
+		        }
+    </style>
+</head>
+<body>
+
+    <h1>アイテム売り場</h1>
+    <div class="currency">ST: <span th:text="${token}">0</span></div>
+
+    <div class="shop-grid">
+        <div th:each="item : ${items}" class="item-card">
+			<img th:src="${item.imageUrl != null ? item.imageUrl : '/images/no-image.png'}" 
+			                 alt="Item Image" 
+			                 class="item-image">
+            <div class="item-type" th:text="${item.type}">WEAPON</div>
+            <div class="item-name" th:text="${item.name}">Item Name</div>
+            <div class="item-desc" th:text="${item.description}">Description...</div>
+            
+            <div th:with="ownedInv=${inventoryMap.get(item.id)}">
+                
+                <div th:if="${ownedInv == null}">
+                    <div class="item-price" th:text="${item.price} + ' ST'">100 ST</div>
+                    <form th:action="@{/shop/buy/{id}(id=${item.id})}" method="post">
+                        <button type="submit" class="btn-buy">PURCHASE</button>
+                    </form>
+                </div>
+
+                <div th:if="${ownedInv != null}">
+                    <div class="item-price" style="color: #0f0;">OWNED</div>
+                    
+                    <div th:if="${ownedInv.equipped}">
+                        <button class="btn-equipped" disabled>EQUIPPED</button>
+                    </div>
+                    <div th:if="${!ownedInv.equipped}">
+                        <form th:action="@{/shop/equip/{id}(id=${item.id})}" method="post">
+                            <button type="submit" class="btn-equip">EQUIP</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="/my-page/loadout" class="back-link">← RETURN TO LOADOUT</a>
+
+</body>
+</html>

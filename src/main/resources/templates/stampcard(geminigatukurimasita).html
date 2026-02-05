@@ -235,7 +235,11 @@
             }
 
             // 日付セル
-            const todayStr = new Date().toISOString().split('T')[0];
+			const todayObj = new Date();
+			const tYear = todayObj.getFullYear();
+			const tMonth = String(todayObj.getMonth() + 1).padStart(2, '0');
+			const tDay = String(todayObj.getDate()).padStart(2, '0');
+			const todayStr = `${tYear}-${tMonth}-${tDay}`;
 
             for (let d = 1; d <= totalDays; d++) {
                 const cell = document.createElement('div');

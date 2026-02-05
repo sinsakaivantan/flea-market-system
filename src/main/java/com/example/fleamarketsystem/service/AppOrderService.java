@@ -1,15 +1,5 @@
 package com.example.fleamarketsystem.service;
 
-import com.example.fleamarketsystem.entity.AppOrder;
-import com.example.fleamarketsystem.entity.Item;
-import com.example.fleamarketsystem.entity.User;
-import com.example.fleamarketsystem.repository.ItemRepository;
-import com.example.fleamarketsystem.repository.AppOrderRepository;
-import com.stripe.exception.StripeException;
-import com.stripe.model.PaymentIntent;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +7,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.fleamarketsystem.entity.AppOrder;
+import com.example.fleamarketsystem.entity.Item;
+import com.example.fleamarketsystem.entity.User;
+import com.example.fleamarketsystem.repository.AppOrderRepository;
+import com.example.fleamarketsystem.repository.ItemRepository;
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
 
 @Service
 public class AppOrderService {
@@ -26,13 +27,19 @@ public class AppOrderService {
     private final ItemService itemService;
     private final StripeService stripeService;
     private final EmailService emailService;
+    // ★追加: コイン付与のために必要
+    private final UserMoneyService userMoneyService;
 
-    public AppOrderService(AppOrderRepository appOrderRepository, ItemRepository itemRepository, ItemService itemService, StripeService stripeService, EmailService emailService) {
+    // ★修正: コンストラクタに UserMoneyService を追加
+    public AppOrderService(AppOrderRepository appOrderRepository, ItemRepository itemRepository, 
+                           ItemService itemService, StripeService stripeService, 
+                           EmailService emailService, UserMoneyService userMoneyService) {
         this.appOrderRepository = appOrderRepository;
         this.itemRepository = itemRepository;
         this.itemService = itemService;
         this.stripeService = stripeService;
         this.emailService = emailService;
+        this.userMoneyService = userMoneyService;
     }
 
     @Transactional
@@ -73,10 +80,30 @@ public class AppOrderService {
             itemService.markItemAsSold(appOrder.getItem().getId());
             AppOrder savedOrder = appOrderRepository.save(appOrder);
 
+            // ★★★ ここに追加: フリマコイン付与処理 ★★★
+            // AppOrder.getPrice() が BigDecimal の場合を想定して計算
+            BigDecimal priceBD = savedOrder.getPrice();
+            // UserMoneyService は int を要求するため変換 (小数は切り捨て)
+            int priceInt = priceBD.intValue(); 
+
+            // 1. 売った側 (Seller): 10%
+            int sellerCoin = (int) (priceInt * 0.10);
+            if (sellerCoin > 0) {
+                userMoneyService.addFleaCoin(savedOrder.getItem().getSeller(), sellerCoin);
+            }
+
+            // 2. 買った側 (Buyer): 5%
+            int buyerCoin = (int) (priceInt * 0.05);
+            if (buyerCoin > 0) {
+                userMoneyService.addFleaCoin(savedOrder.getBuyer(), buyerCoin);
+            }
+            // ★★★ 追加終了 ★★★
+
+
             // Send email notification to seller
             if (savedOrder.getItem().getSeller().getEmail() != null && !savedOrder.getItem().getSeller().getEmail().isEmpty()) {
                 String subject = "商品が購入されました";
-                String message = String.format("商品が購入されました！\n\n商品名: %s\n購入者: %s\n価格: ¥%s",
+                String message = String.format("商品が購入されました！\n\n商品名: %s\n購入者: %s\n価格: ¥%s\n\nフリマコインを獲得しました！",
                         savedOrder.getItem().getName(),
                         savedOrder.getBuyer().getName(),
                         savedOrder.getPrice());

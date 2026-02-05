@@ -13,7 +13,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // クライアントへのメッセージ送信先プレフィックス (/topic/chat/{itemId} などで使用)
-        config.enableSimpleBroker("/topic");
+        config.enableSimpleBroker("/topic", "/queue");
         // クライアントからのメッセージ受信プレフィックス
         config.setApplicationDestinationPrefixes("/app");
     }
@@ -22,5 +22,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // WebSocket接続のエンドポイント
         registry.addEndpoint("/ws-chat").withSockJS();
+        registry.addEndpoint("/ws-quest").withSockJS();
     }
 }

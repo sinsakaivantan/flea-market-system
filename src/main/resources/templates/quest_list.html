@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celestial Mandates</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #1a0b2e;
+            --gold: #d4af37;
+            --gold-glow: #f9e79f;
+            --text-color: #e0d8ff;
+            --glass-panel: rgba(20, 10, 40, 0.75);
+            --completed-glow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #2e1a47 0%, #0d0417 100%);
+            color: var(--text-color);
+            font-family: 'Cormorant Garamond', serif;
+            position: relative;
+            overflow-x: hidden;
+            padding-bottom: 50px;
+        }
+
+        /* --- 背景装飾 --- */
+        #constellation {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        .zodiac-bg {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px; height: 800px;
+            border: 1px dashed rgba(212, 175, 55, 0.1);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: rotateBg 120s linear infinite;
+        }
+        @keyframes rotateBg { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* --- メインレイアウト --- */
+        .container-wrapper {
+            position: relative;
+            z-index: 10;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-top: 20px;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            letter-spacing: 0.2em;
+            margin-bottom: 15px;
+        }
+
+        .coin-display {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--gold);
+            padding: 10px 30px;
+            border-radius: 50px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            color: var(--gold-glow);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+        }
+        .coin-value { font-weight: bold; font-size: 1.4rem; margin-right: 5px; }
+
+        /* --- タブ切り替えボタン --- */
+        .tab-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text-color);
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            padding: 10px 25px;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.1em;
+            min-width: 180px;
+        }
+
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 0%; height: 100%;
+            background: var(--gold);
+            z-index: -1;
+            transition: width 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+        }
+
+        /* アクティブなタブ */
+        .tab-btn.active {
+            color: #0d0417; /* 文字色を黒に */
+            border-color: var(--gold);
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+        .tab-btn.active::before {
+            width: 100%;
+        }
+
+        /* --- クエストリスト --- */
+        .quest-section {
+            /* フェードインアニメーション用 */
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        .quest-section.hidden {
+            display: none;
+            opacity: 0;
+        }
+
+        /* アニメーション用 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: '✦';
+            color: var(--gold);
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .quest-grid { display: grid; gap: 20px; }
+
+        .quest-item {
+            background: var(--glass-panel);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 20px;
+            position: relative;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quest-item::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: rgba(212, 175, 55, 0.2);
+            transition: 0.3s;
+        }
+
+        /* 達成済み */
+        .quest-item.completed-bg {
+            border-color: var(--gold);
+            box-shadow: var(--completed-glow);
+            background: rgba(40, 20, 60, 0.85);
+        }
+        .quest-item.completed-bg::before {
+            background: var(--gold);
+            box-shadow: 0 0 10px var(--gold);
+        }
+
+        /* 受取済み */
+        .quest-item.claimed-bg {
+            opacity: 0.6;
+            background: rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .quest-item.claimed-bg .quest-info {
+            text-decoration: line-through;
+            color: rgba(224, 216, 255, 0.4);
+        }
+
+        .quest-info { flex: 1; }
+        .quest-title { font-family: 'Cinzel', serif; font-size: 1.2rem; color: var(--gold-glow); margin-bottom: 5px; }
+        .quest-desc { font-size: 0.95rem; color: rgba(224, 216, 255, 0.8); margin-bottom: 5px; }
+        .quest-reward { font-size: 0.9rem; color: var(--gold); font-weight: bold; }
+
+        .quest-action { min-width: 140px; text-align: right; margin-left: 20px; }
+
+        .claim-btn {
+            background: transparent; color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.9rem;
+            padding: 8px 20px; border: 1px solid var(--gold); cursor: pointer; transition: all 0.3s ease;
+            letter-spacing: 0.1em;
+        }
+        .claim-btn:hover { background: var(--gold); color: #0d0417; box-shadow: 0 0 15px var(--gold); }
+        .claim-btn:disabled { border-color: #555; color: #555; background: transparent; cursor: not-allowed; box-shadow: none; }
+
+        .status-badge {
+            font-family: 'Cinzel', serif; font-size: 0.85rem; padding: 5px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.5); letter-spacing: 0.1em;
+        }
+        .status-badge.status-claimed { border-color: transparent; color: rgba(212, 175, 55, 0.5); }
+
+        @media (max-width: 600px) {
+            .quest-item { flex-direction: column; align-items: flex-start; }
+            .quest-action { margin-left: 0; margin-top: 15px; width: 100%; text-align: center; }
+            .claim-btn { width: 100%; }
+            .tab-controls { flex-direction: column; align-items: center; gap: 10px; }
+            .tab-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="constellation"></canvas>
+    <div class="zodiac-bg"></div>
+
+    <div class="container-wrapper">
+        <header>
+            <h1>Quest List</h1>
+            <div class="coin-display">
+                <span class="coin-value" id="user-coin-display" th:text="${currentCoins}">0</span>
+                <span>フリマ コイン</span>
+            </div>
+        </header>
+
+        <div class="tab-controls">
+            <button id="btn-daily" class="tab-btn active" onclick="switchTab('daily')">Daily</button>
+            <button id="btn-normal" class="tab-btn" onclick="switchTab('normal')">Main</button>
+        </div>
+
+        <div id="section-daily" class="quest-section fade-in">
+            <h2 class="section-title">Daily Quest</h2>
+            <div class="quest-grid">
+                <div th:each="uq : ${userQuests}" 
+                     th:if="${uq.quest.questType == 'DAILY'}"
+                     th:id="'quest-box-' + ${uq.id}"
+                     class="quest-item" 
+                     th:classappend="${uq.isCompleted} ? (${uq.isClaimed} ? 'claimed-bg' : 'completed-bg') : ''">
+                    
+                    <div class="quest-info">
+                        <div class="quest-title" th:text="${uq.quest.title}">Daily Task</div>
+                        <div class="quest-desc" th:text="${uq.quest.description}">Description</div>
+                        <div class="quest-reward">Reward: <span th:text="${uq.quest.rewardAmount}">100</span> SC</div>
+                    </div>
+
+                    <div class="quest-action">
+                        <div th:if="${uq.isCompleted}">
+                            <div th:if="${!uq.isClaimed}" th:id="'action-area-' + ${uq.id}">
+                                <button class="claim-btn" th:onclick="'sendClaimRequest(' + ${uq.id} + ')'">
+                                    RECEIVE
+                                </button>
+                            </div>
+                            <div th:if="${uq.isClaimed}" th:id="'claimed-badge-' + ${uq.id}">
+                                <span class="status-badge status-claimed">CLAIMED</span>
+                            </div>
+                        </div>
+                        <div th:unless="${uq.isCompleted}">
+                            <span class="status-badge">LOCKED</span>
+                        </div>
+                    </div>
+                </div>
+                <p th:if="${userQuests.isEmpty()}" style="text-align:center; opacity:0.5;">No daily omens align today...</p>
+            </div>
+        </div>
+
+        <div id="section-normal" class="quest-section hidden">
+            <h2 class="section-title">Main Quest</h2>
+            <div class="quest-grid">
+                <div th:each="uq : ${userQuests}" 
+                     th:if="${uq.quest.questType != 'DAILY'}"
+                     th:id="'quest-box-' + ${uq.id}"
+                     class="quest-item" 
+                     th:classappend="${uq.isCompleted} ? (${uq.isClaimed} ? 'claimed-bg' : 'completed-bg') : ''">
+                    
+                    <div class="quest-info">
+                        <div class="quest-title" th:text="${uq.quest.title}">Main Quest</div>
+                        <div class="quest-desc" th:text="${uq.quest.description}">Description</div>
+                        <div class="quest-reward">Reward: <span th:text="${uq.quest.rewardAmount}">500</span> SC</div>
+                    </div>
+
+                    <div class="quest-action">
+                        <div th:if="${uq.isCompleted}">
+                            <div th:if="${!uq.isClaimed}" th:id="'action-area-' + ${uq.id}">
+                                <button class="claim-btn" th:onclick="'sendClaimRequest(' + ${uq.id} + ')'">
+                                    RECEIVE
+                                </button>
+                            </div>
+                            <div th:if="${uq.isClaimed}" th:id="'claimed-badge-' + ${uq.id}">
+                                <span class="status-badge status-claimed">CLAIMED</span>
+                            </div>
+                        </div>
+                        <div th:unless="${uq.isCompleted}">
+                            <span class="status-badge">LOCKED</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Tab Switching Logic (New) ---
+        function switchTab(type) {
+            const dailySec = document.getElementById('section-daily');
+            const normalSec = document.getElementById('section-normal');
+            const btnDaily = document.getElementById('btn-daily');
+            const btnNormal = document.getElementById('btn-normal');
+
+            // クラスのリセット
+            dailySec.classList.remove('fade-in');
+            normalSec.classList.remove('fade-in');
+
+            // void offsetWidth を呼び出してリフローを強制（アニメーション再発火のため）
+            void dailySec.offsetWidth; 
+            void normalSec.offsetWidth;
+
+            if (type === 'daily') {
+                dailySec.classList.remove('hidden');
+                dailySec.classList.add('fade-in');
+                normalSec.classList.add('hidden');
+                
+                btnDaily.classList.add('active');
+                btnNormal.classList.remove('active');
+            } else {
+                normalSec.classList.remove('hidden');
+                normalSec.classList.add('fade-in');
+                dailySec.classList.add('hidden');
+                
+                btnNormal.classList.add('active');
+                btnDaily.classList.remove('active');
+            }
+        }
+
+        // --- WebSocket Logic (Existing) ---
+        let stompClient = null;
+
+        window.onload = function() {
+            connect();
+            initStars();
+        };
+
+        function connect() {
+            const socket = new SockJS('/ws-quest');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null; 
+
+            stompClient.connect({}, function (frame) {
+                console.log('Celestial Link Established');
+                stompClient.subscribe('/user/queue/reply', function (message) {
+                    const response = JSON.parse(message.body);
+                    handleResponse(response);
+                });
+            }, function(error) {
+                console.error("Connection lost:", error);
+            });
+        }
+
+        function sendClaimRequest(questId) {
+            if (!stompClient) {
+                alert("Connection lost. Please refresh.");
+                return;
+            }
+            const btnDiv = document.getElementById('action-area-' + questId);
+            if(btnDiv) {
+                const btn = btnDiv.querySelector('button');
+                if(btn) {
+                    btn.disabled = true;
+                    btn.innerText = "VERIFYING...";
+                }
+            }
+            stompClient.send("/app/claim", {}, JSON.stringify({'questId': questId}));
+        }
+
+        function handleResponse(res) {
+            if (res.success) {
+                const actionArea = document.getElementById('action-area-' + res.questId);
+                if (actionArea) actionArea.innerHTML = '<span class="status-badge status-claimed">CLAIMED</span>';
+
+                const questBox = document.getElementById('quest-box-' + res.questId);
+                if (questBox) {
+                    questBox.classList.remove('completed-bg');
+                    questBox.classList.add('claimed-bg');
+                }
+
+                const coinDisplay = document.getElementById('user-coin-display');
+                if (coinDisplay) {
+                    coinDisplay.innerText = res.newCoinBalance.toLocaleString();
+                    coinDisplay.style.color = '#fff';
+                    setTimeout(() => { coinDisplay.style.color = 'var(--gold-glow)'; }, 300);
+                }
+            } else {
+                alert("Fate denies this claim: " + res.message);
+                const btnDiv = document.getElementById('action-area-' + res.questId);
+                if(btnDiv) {
+                    const btn = btnDiv.querySelector('button');
+                    if(btn) {
+                        btn.disabled = false;
+                        btn.innerText = "RECEIVE";
+                    }
+                }
+            }
+        }
+
+        // --- Starry Background Logic ---
+        function initStars() {
+            const canvas = document.getElementById('constellation');
+            const ctx = canvas.getContext('2d');
+            let width, height, stars = [];
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            
+            class Star {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.size = Math.random() * 1.5;
+                    this.alpha = Math.random();
+                    this.direction = Math.random() > 0.5 ? 0.005 : -0.005;
+                }
+                update() {
+                    this.alpha += this.direction;
+                    if (this.alpha >= 1 || this.alpha <= 0.2) this.direction *= -1;
+                }
+                draw() {
+                    ctx.globalAlpha = this.alpha;
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            function loop() {
+                ctx.clearRect(0, 0, width, height);
+                stars.forEach(star => { star.update(); star.draw(); });
+                requestAnimationFrame(loop);
+            }
+            window.addEventListener('resize', resize);
+            resize();
+            for(let i=0; i<100; i++) stars.push(new Star());
+            loop();
+        }
+    </script>
+</body>
+</html>
