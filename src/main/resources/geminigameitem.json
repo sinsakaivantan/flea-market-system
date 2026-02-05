@@ -1,0 +1,95 @@
+[
+  {
+    "name": "ただのゴミ",
+    "description": "前と後ろにゴミを撒き散らす。",
+    "price": 0,
+    "type": "WEAPON",
+    "fireRate": 5.0,
+    "firePattern": "FRONT_BACK",
+    "bulletCount": 2,
+    "bulletSize": 1.0,
+    "imageUrl": "https://res.cloudinary.com/diitiq4ku/image/upload/v1770049437/IMG_0162_lskelj.jpg"
+  },
+  {
+    "name": "虚無",
+    "description": "必殺技などない。",
+    "price": 0,
+    "type": "ULT",
+    "ultType": "NONE",
+    "ultChargeReq": 999,
+    "ultPower": 0.0
+  },
+  {
+    "name": "スタンダードガン",
+    "description": "ごく普通の連射銃。",
+    "price": 100,
+    "type": "WEAPON",
+    "fireRate": 12.0,
+    "firePattern": "SPREAD",
+    "bulletCount": 1,
+    "bulletSize": 1.0
+  },
+  {
+    "name": "3wayショット",
+    "description": "前方に3方向に弾を発射する。",
+    "price": 500,
+    "type": "WEAPON",
+    "fireRate": 8.0,
+    "firePattern": "SPREAD",
+    "bulletCount": 3,
+    "bulletSize": 0.8
+  },
+  {
+    "name": "鉄のお守り",
+    "description": "少しだけ頑丈になる。",
+    "price": 200,
+    "type": "AMULET",
+    "bonusHp": 20,
+    "damageReduction": 0.1
+  },
+  {
+    "name": "スピードスター",
+    "description": "移動速度が大幅に上がる。",
+    "price": 300,
+    "type": "DOPING",
+    "rotationSpeed": 0.1,
+    "speedForward": 7.0,
+    "speedBackward": 4.0
+  },
+  {
+    "name": "全滅ボム",
+    "description": "画面内の敵を一掃する。",
+    "price": 1000,
+    "type": "ULT",
+    "ultType": "WIPE",
+    "ultChargeReq": 15,
+    "ultPower": 0.0
+  },
+  {
+     "name": "連続剣",
+     "description": "画面内の敵を一掃する。",
+     "price": 1000,
+     "type": "WEAPON",
+	 "fireRate": 15.0,
+	 "firePattern": "FRONT_BACK",
+	 "bulletCount": 2,
+	 "bulletSize": 3.0
+   },
+   {
+      "name": "星のお守り",
+      "description": "とても頑丈になる。",
+      "price": 200,
+      "type": "AMULET",
+      "bonusHp": 20,
+      "damageReduction": 7
+   },
+   {
+     "name": "覚醒剤",
+     "description": "移動速度が大幅に上がる。",
+     "price": 300,
+     "type": "DOPING",
+     "rotationSpeed": 0.1,
+     "speedForward": 15.0,
+     "speedBackward": 4.0
+   }
+]

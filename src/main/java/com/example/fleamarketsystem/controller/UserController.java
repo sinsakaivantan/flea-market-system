@@ -4,7 +4,9 @@ import static dev.samstevens.totp.util.Utils.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,12 +21,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.fleamarketsystem.entity.Review;
 import com.example.fleamarketsystem.entity.User;
+import com.example.fleamarketsystem.entity.UserInventory;
 import com.example.fleamarketsystem.service.AppOrderService;
 import com.example.fleamarketsystem.service.CloudinaryService;
 import com.example.fleamarketsystem.service.FavoriteService;
 import com.example.fleamarketsystem.service.FollowService;
 import com.example.fleamarketsystem.service.ItemService;
 import com.example.fleamarketsystem.service.ReviewService;
+import com.example.fleamarketsystem.service.ShootingGameService;
+import com.example.fleamarketsystem.service.ShopService;
 import com.example.fleamarketsystem.service.UserService;
 
 import dev.samstevens.totp.exceptions.QrGenerationException;
@@ -43,10 +48,12 @@ public class UserController {
 	private final FollowService followService;
 	private final CloudinaryService cloudinaryService;
 	private final QrGenerator qrGenerator;
+	private final ShootingGameService gameService;
+    private final ShopService shopService;
 
 	public UserController(UserService userService, ItemService itemService, AppOrderService appOrderService,
 			FavoriteService favoriteService, ReviewService reviewService, FollowService followService,
-			CloudinaryService cloudinaryService, QrGenerator qrGenerator) {
+			CloudinaryService cloudinaryService, QrGenerator qrGenerator,ShootingGameService gameService,ShopService shopService) {
 		this.userService = userService;
 		this.itemService = itemService;
 		this.appOrderService = appOrderService;
@@ -55,6 +62,8 @@ public class UserController {
 		this.followService = followService;
 		this.cloudinaryService = cloudinaryService;
 		this.qrGenerator = qrGenerator;
+		this.gameService = gameService;
+		this.shopService = shopService;
 	}
 
 	@GetMapping
@@ -247,12 +256,39 @@ public class UserController {
 	
 	@GetMapping("/geminigame")
 	public String bakaAiGemini() {
-		return "bakaaigemini";
+		return "shooting_game";
 	}
 	
 	@GetMapping("/slot")
     public String showSlot() {
         return "slot"; // templates/slot.html
+    }
+	
+	
+	@GetMapping("/loadout")
+    public String showLoadout(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        User user = userService.getUserByEmail(userDetails.getUsername()).orElseThrow();
+
+        // 1. 現在の計算済みステータス
+        model.addAttribute("loadout", gameService.getOrCreateLoadout(user));
+
+        // 2. 所持している全アイテム（モーダルでの選択用）
+        List<UserInventory> allInventory = shopService.getUserInventory(user);
+        model.addAttribute("allInventory", allInventory);
+
+        // 3. 現在装備中のアイテムを Map<ItemType, UserInventory> に変換
+        // これにより、HTML側で equippedMap['WEAPON'] のようにアクセスできます
+        Map<String, UserInventory> equippedMap = new HashMap<>();
+        
+        for (UserInventory inv : allInventory) {
+            if (inv.isEquipped()) {
+                // "WEAPON", "AMULET" などの文字列をキーにする
+                equippedMap.put(inv.getItem().getType().name(), inv);
+            }
+        }
+        model.addAttribute("equippedMap", equippedMap);
+
+        return "loadout";
     }
 	
 }

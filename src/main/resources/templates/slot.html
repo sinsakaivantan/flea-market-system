@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eye-Press Slot 777</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
 <style>
-    /* --- 通常時のスタイル (ダークで神秘的) --- */
+    /* --- 提供されたスタイルそのまま --- */
     body {
         margin: 0;
         height: 100vh;
@@ -46,7 +50,6 @@
         border: 1px solid #555;
     }
 
-    /* リール (数字が表示される箱) */
     .reel {
         width: 100px;
         height: 140px;
@@ -57,7 +60,7 @@
         justify-content: center;
         align-items: center;
         font-size: 5rem;
-        font-family: 'Arial', sans-serif; /* 数字は見やすく */
+        font-family: 'Arial', sans-serif;
         font-weight: bold;
         color: #ccc;
         cursor: pointer;
@@ -65,22 +68,21 @@
         overflow: hidden;
         transition: transform 0.1s;
         box-shadow: inset 0 0 20px #000;
+        user-select: none; /* 連打時の選択防止 */
     }
 
     .reel:active {
         transform: scale(0.95);
     }
 
-    /* 停止済み */
     .reel.stopped {
         border-color: #d4af37;
         background: #333;
         cursor: default;
     }
 
-    /* 7だけ光るクラス (回転中も適用) */
     .reel.seven-glow {
-        color: #ff0000; /* 赤文字 */
+        color: #ff0000;
         text-shadow: 
             0 0 10px #ff0000,
             0 0 20px #ffaa00,
@@ -114,18 +116,17 @@
         color: #000;
     }
 
-    /* --- クソダサ勝利画面 --- */
     #winOverlay {
-        display: none; /* 最初は隠す */
+        display: none;
         position: fixed;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background: blue; /* 原色の青 */
+        background: blue;
         z-index: 9999;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        animation: bg-pika 0.2s infinite; /* 背景ピカピカ */
+        animation: bg-pika 0.2s infinite;
     }
 
     @keyframes bg-pika {
@@ -135,16 +136,13 @@
     }
 
     .dasa-font {
-        font-family: "MS Mincho", "MS PMincho", "Times New Roman", serif; /* 明朝体 */
-        font-size: 8vw; /* 画面幅に合わせて巨大化 */
+        font-family: "MS Mincho", "MS PMincho", "Times New Roman", serif;
+        font-size: 8vw;
         font-weight: 900;
-        color: #ff00ff; /* マゼンタ */
-        /* 文字を縦に引き伸ばす */
+        color: #ff00ff;
         transform: scale(1, 4);
         margin: 50px 0;
         white-space: nowrap;
-        
-        /* 猛烈な影 */
         text-shadow: 
             5px 5px 0px #000,
             10px 10px 0px #fff,
@@ -172,6 +170,38 @@
     @keyframes fall {
         to { transform: translateY(100vh) rotate(720deg); }
     }
+    
+    /* トースト通知 */
+    #toast {
+        visibility: hidden;
+        min-width: 250px;
+        margin-left: -125px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 2px;
+        padding: 16px;
+        position: fixed;
+        z-index: 10000;
+        left: 50%;
+        bottom: 30px;
+        font-size: 17px;
+    }
+
+    #toast.show {
+        visibility: visible;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+    
+    @keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+    }
+
+    @keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+    }
 
 </style>
 </head>
@@ -189,6 +219,9 @@
         <div class="controls">
             <p>Click Panels to Stop!</p>
             <button class="btn" onclick="resetGame()">RETRY</button>
+            <div style="margin-top:20px;">
+                <a href="/my-page/quests" style="color:#d4af37; text-decoration:none;">クエスト一覧に戻る</a>
+            </div>
         </div>
     </div>
 
@@ -196,18 +229,61 @@
         <div class="dasa-font">おめでとうございまし</div>
         
         <div class="wordart">BIG BONUS!!</div>
-        <button class="btn" style="background: white; color: black; border: 5px solid black; font-weight: bold; margin-top: 150px; transform: scale(2);" onclick="resetGame()">戻る</button>
+        <div style="font-size:2rem; color:white; font-weight:bold; margin-top:20px;">クエスト達成！</div>
+        
+        <button class="btn" style="background: white; color: black; border: 5px solid black; font-weight: bold; margin-top: 100px; transform: scale(2);" onclick="resetGame()">戻る</button>
     </div>
+    
+    <div id="toast"></div>
 
 <script>
-    // 設定
+    // --- WebSocket接続処理 ---
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS('/ws-quest');
+        stompClient = Stomp.over(socket);
+        // stompClient.debug = null; // デバッグログを消す場合はコメントアウト解除
+
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            
+            // サーバーからの返信を受け取る
+            stompClient.subscribe('/user/queue/reply', function (message) {
+                const response = JSON.parse(message.body);
+                // 必要ならトースト表示など
+                if(response.success) {
+                    showToast("クエスト進捗が保存されました！");
+                }
+            });
+        });
+    }
+
+    // 勝利時にサーバーへ通知
+    function sendWinSignal() {
+        if(stompClient && stompClient.connected) {
+            console.log("Sending Win Signal...");
+            // スロット勝利通知 ("/app/slot-win" へ送信)
+            stompClient.send("/app/slot-win", {}, JSON.stringify({}));
+        } else {
+            console.error("WebSocket is not connected.");
+        }
+    }
+
+    function showToast(message) {
+        const x = document.getElementById("toast");
+        x.innerText = message;
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+    }
+
+    // --- ゲームロジック ---
     const reelElements = [
         document.getElementById('reel0'),
         document.getElementById('reel1'),
         document.getElementById('reel2')
     ];
     
-    // 状態管理
     let reels = [
         { value: 1, interval: null, stopped: false },
         { value: 1, interval: null, stopped: false },
@@ -216,7 +292,6 @@
 
     const winOverlay = document.getElementById('winOverlay');
 
-    // ゲーム開始
     function startGame() {
         winOverlay.style.display = 'none';
         
@@ -225,29 +300,22 @@
             reel.stopped = false;
             reelElements[index].classList.remove('stopped', 'seven-glow');
             
-            // 回転開始（目押しできるよう、少し速度差をつけるが、基本は目で追える速さ）
-            // 80ms 〜 100ms くらいが目押ししやすい
-            const speed = 80; 
-            
-            // 既存のインターバルがあればクリア
             if (reel.interval) clearInterval(reel.interval);
 
+            // 目押し可能な速度
+            const speed = 80; 
+
             reel.interval = setInterval(() => {
-                // 数字更新 (1-9)
                 reel.value++;
                 if (reel.value > 9) reel.value = 1;
-                
                 updateVisual(index, reel.value);
             }, speed);
         });
     }
 
-    // 表示更新
     function updateVisual(index, value) {
         const el = reelElements[index];
         el.innerText = value;
-
-        // 7の時だけ光らせる
         if (value === 7) {
             el.classList.add('seven-glow');
         } else {
@@ -255,20 +323,14 @@
         }
     }
 
-    // ストップボタン（リールクリック）処理
     window.stopReel = function(index) {
         const reel = reels[index];
-        
-        // すでに止まってたら何もしない
         if (reel.stopped) return;
 
-        // 停止
         clearInterval(reel.interval);
         reel.stopped = true;
         reelElements[index].classList.add('stopped');
         
-        // 7で止まった場合は光らせっぱなしにするための処理
-        // (updateVisualでクラスがついているはずだが、念のため確認)
         if (reel.value === 7) {
             reelElements[index].classList.add('seven-glow');
         } else {
@@ -278,25 +340,23 @@
         checkWin();
     };
 
-    // 勝利判定
     function checkWin() {
-        // 全リールが止まっているか確認
         if (reels.some(r => !r.stopped)) return;
 
-        // 全て7か？
         const isAllSeven = reels.every(r => r.value === 7);
 
         if (isAllSeven) {
+            // ★サーバーへ勝利通知を送信
+            sendWinSignal();
+
             setTimeout(() => {
                 showWinScreen();
             }, 500);
         }
     }
 
-    // 勝利画面表示
     function showWinScreen() {
         winOverlay.style.display = 'flex';
-        // 紙吹雪を散らす
         for(let i=0; i<50; i++) {
             createConfetti();
         }
@@ -313,14 +373,13 @@
     }
 
     window.resetGame = function() {
-        // 紙吹雪削除
         const confettis = document.querySelectorAll('.confetti');
         confettis.forEach(c => c.remove());
-        
         startGame();
     };
 
-    // 初回起動
+    // 初期化
+    connect(); // WebSocket接続開始
     startGame();
 
 </script>

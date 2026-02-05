@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="_csrf" th:content="${_csrf.token}"/>
+<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+<title>Singularity Striker: Boss Raid Puzzle</title>
+
+<link rel="stylesheet" th:href="@{/css/shooting_game.css}">
+
+</head>
+<body>
+  <div id="game-container">
+    <div id="ui">
+        <div id="timer-display">03:00</div>
+        <div class="hp-bar-container">
+            <div id="hp-fill" class="hp-bar-fill"></div>
+            <span id="hp-text" class="hp-text">100/100</span>
+        </div>
+        
+        <div class="ui-row">
+            <div>SCORE: <span id="score">0</span></div>
+            <div style="color: #aaa;">BEST: <span id="best-score">---</span></div>
+        </div>
+        <div id="ult-status">ULT: 0/10</div>
+        <div id="loadout-info" style="font-size: 10px; color: #888; margin-top: 5px;"></div>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="message-screen">
+        <div class="loading">Loading Data...</div>
+    </div>
+
+    <div id="ranking-board">
+        <h2 id="result-title" style="color: #00ffcc; margin-top: 0;">GAME OVER</h2>
+        <div id="ranking-list" style="margin-bottom: 20px;"></div>
+        <p style="font-size: 14px; color: #aaa;">Press ENTER to Restart</p>
+    </div>
+  </div>
+  <script th:src="@{/js/game_utils.js}"></script>
+    <script th:src="@{/js/boss.js}"></script>
+    <script th:src="@{/js/shooting_game.js}"></script>
+</body>
+</html>

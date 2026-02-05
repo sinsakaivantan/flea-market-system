@@ -1,0 +1,30 @@
+[
+  {
+    "title": "脳トレマスター",
+    "description": "シューティングゲームでスコア100を超える",
+    "questType": "NORMAL",
+    "conditionCode": "SHOOTING_SCORE_100",
+    "rewardAmount": 100
+  },
+  {
+    "title": "廃人プレイヤー",
+    "description": "シューティングゲームでスコア500を超える",
+    "questType": "NORMAL",
+    "conditionCode": "SHOOTING_SCORE_500",
+    "rewardAmount": 250
+  },
+  {
+    "title": "フリマデビュー",
+    "description": "商品を1つ出品する",
+    "questType": "NORMAL",
+    "conditionCode": "ITEM_LISTING_1",
+    "rewardAmount": 100
+  },
+  {
+      "title": "運試しの時間",
+      "description": "スロットで777を揃える",
+      "questType": "DAILY",
+      "conditionCode": "SLOT_777",
+      "rewardAmount": 7
+    }
+]
