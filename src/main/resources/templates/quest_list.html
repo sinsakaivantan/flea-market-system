@@ -20,7 +20,51 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+		/* --- 戻るボタン --- */
+		        .back-nav {
+		            position: absolute;
+		            top: 20px;
+		            left: 20px;
+		            z-index: 20;
+		        }
 
+		        .back-link {
+		            display: flex;
+		            align-items: center;
+		            gap: 8px;
+		            color: rgba(224, 216, 255, 0.5); /* 控えめな色 */
+		            text-decoration: none;
+		            font-family: 'Cinzel', serif;
+		            font-size: 1rem;
+		            letter-spacing: 0.1em;
+		            transition: all 0.3s ease;
+		        }
+
+		        .back-link::before {
+		            content: '«';
+		            font-size: 1.4rem;
+		            padding-bottom: 2px;
+		            transition: transform 0.3s ease;
+		        }
+
+		        .back-link:hover {
+		            color: var(--gold);
+		            text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+		        }
+
+		        .back-link:hover::before {
+		            transform: translateX(-5px); /* ホバー時に矢印が少し動く */
+		        }
+
+		        /* スマホ時はヘッダーと被らないように調整 */
+		        @media (max-width: 600px) {
+		            .back-nav {
+		                position: relative;
+		                top: 0;
+		                left: 0;
+		                margin-bottom: -20px; /* ヘッダーとの距離感調整 */
+		            }
+		        }
         body {
             min-height: 100vh;
             background: radial-gradient(circle at center, #2e1a47 0%, #0d0417 100%);
@@ -255,6 +299,9 @@
     <div class="zodiac-bg"></div>
 
     <div class="container-wrapper">
+		<div class="back-nav">
+		            <a th:href="@{/play}" class="back-link">RETURN</a>
+		        </div>
         <header>
             <h1>Quest List</h1>
             <div class="coin-display">
