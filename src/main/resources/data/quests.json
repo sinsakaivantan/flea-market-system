@@ -14,8 +14,8 @@
     "rewardAmount": 250
   },
   {
-    "title": "フリマデビュー",
-    "description": "商品を1つ出品する",
+    "title": "未実装(フリマデビュー)",
+    "description": "未実装(商品を1つ出品する)",
     "questType": "NORMAL",
     "conditionCode": "ITEM_LISTING_1",
     "rewardAmount": 100

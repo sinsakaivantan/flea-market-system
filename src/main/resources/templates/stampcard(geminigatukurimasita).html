@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>マイページ - フリマアプリ</title>
+    <title>Login Bonus - Celestial Mandates</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<header th:insert="~{fragments/layout :: header}"></header>
-
+<div class="back-nav">
+    <a th:href="@{/play}" class="back-link">RETURN</a>
+</div>
 <div class="container-wrapper">
     <section class="stamp-section">
         <h2 class="stamp-title">Login Bonus Chart</h2>
@@ -29,8 +30,6 @@
 </div>
 
 <style>
-    /* --- CSS変数のフォールバック定義 --- */
-    /* style.css が読み込めなくてもここが適用されます */
     :root {
         --bg-deep: #1a0b2e;
         --gold: #d4af37;
@@ -42,41 +41,93 @@
     }
 
     body {
-        /* 背景色を明示的に指定 */
+        margin: 0;
+        min-height: 100vh;
         background: radial-gradient(circle at center, #2e1a47 0%, #0d0417 100%);
         color: var(--text-main);
         font-family: 'Cormorant Garamond', serif;
-        min-height: 100vh;
-        margin: 0;
+        overflow-x: hidden;
     }
 
-    .container-wrapper {
-        padding: 40px 20px;
+    /* --- 戻るボタンのスタイル --- */
+    .back-nav {
+        position: fixed; /* 画面左上に固定 */
+        top: 25px;
+        left: 25px;
+        z-index: 50;
+    }
+
+    .back-link {
         display: flex;
-        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        color: rgba(212, 175, 55, 0.5);
+        text-decoration: none;
+        font-family: 'Cinzel', serif;
+        font-size: 1.1rem;
+        letter-spacing: 0.1em;
+        transition: all 0.3s ease;
+        text-shadow: 0 0 5px rgba(0,0,0,0.8);
     }
 
-    /* --- スタンプセクションのスタイル --- */
+    .back-link::before {
+        content: '«';
+        font-size: 1.5rem;
+        padding-bottom: 2px;
+        transition: transform 0.3s ease;
+    }
+
+    .back-link:hover {
+        color: var(--gold);
+        text-shadow: 0 0 15px var(--gold);
+        transform: scale(1.05);
+    }
+
+    .back-link:hover::before {
+        transform: translateX(-5px);
+    }
+
+    /* --- メインレイアウト調整 --- */
+    .container-wrapper {
+        min-height: 100vh; /* 画面いっぱいの高さ */
+        display: flex;
+        justify-content: center; /* 水平中央 */
+        align-items: center;     /* 垂直中央 */
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    /* --- スタンプセクション --- */
     .stamp-section {
         width: 100%;
         max-width: 500px;
-        background: rgba(20, 10, 40, 0.7); /* 少し濃く */
+        background: rgba(20, 10, 40, 0.7);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 30px;
+        padding: 40px 30px; /* パディングを少し調整 */
         text-align: center;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 0 30px rgba(0,0,0,0.5);
-        backdrop-filter: blur(5px);
+        box-shadow: 0 0 40px rgba(0,0,0,0.6);
+        backdrop-filter: blur(8px);
+        /* 登場アニメーション */
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .stamp-title {
         color: var(--primary);
         font-family: 'Cinzel', serif;
-        margin: 0 0 25px 0;
+        margin: 0 0 30px 0;
         text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
-        font-size: 1.8rem;
+        font-size: 2rem;
+        letter-spacing: 0.1em;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        padding-bottom: 15px;
     }
 
     .calendar-wrapper {
@@ -144,9 +195,9 @@
 
     /* スタンプエフェクト（疑似要素で紋章を表示） */
     .calendar-day.stamped::after {
-        content: '☀'; /* 太陽の紋章 */
+        content: '✦'; /* 太陽の代わりに星形に変更（雰囲気合わせ） */
         position: absolute;
-        font-size: 1.6rem;
+        font-size: 1.4rem;
         color: var(--primary);
         text-shadow: 0 0 8px var(--gold-glow);
         animation: stampIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -162,6 +213,13 @@
         0% { transform: scale(3) rotate(-45deg); opacity: 0; }
         100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
+
+    /* スマホ対応 */
+    @media (max-width: 600px) {
+        .stamp-section { padding: 20px; }
+        .calendar-day { font-size: 0.9rem; }
+        .back-nav { top: 15px; left: 15px; }
+    }
 </style>
 
 <script>
@@ -176,21 +234,19 @@
         let stampedDates = []; // APIから取得したスタンプ日付リスト
 
         // 1. スタンプデータを取得
-        // ※サーバー再起動を忘れていると、ここが 404 エラーになります
         fetch('/api/stamps')
             .then(res => {
                 if (!res.ok) throw new Error(`API Error: ${res.status}`);
                 return res.json();
             })
             .then(data => {
-                stampedDates = data; // ["2026-01-30", "2026-01-31", ...]
+                stampedDates = data; 
                 renderCalendar(currentDate);
             })
             .catch(err => {
                 console.error('Failed to fetch stamps:', err);
-                errorMessage.textContent = "データの取得に失敗しました。サーバーが起動しているか確認してください。";
+                errorMessage.textContent = "Unable to commune with the archives.";
                 errorMessage.style.display = 'block';
-                // エラーでもカレンダー枠だけは描画する
                 renderCalendar(currentDate);
             });
 
@@ -202,8 +258,8 @@
             const month = date.getMonth(); // 0-11
             
             // ヘッダー表示
-            const monthNames = ["January", "February", "March", "April", "May", "June",
-                                "July", "August", "September", "October", "November", "December"];
+            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+                                "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
             currentMonthLabel.textContent = `${monthNames[month]} ${year}`;
 
             const firstDay = new Date(year, month, 1);
@@ -221,6 +277,7 @@
                 div.style.border = 'none';
                 div.style.color = '#d4af37'; // Gold
                 div.style.fontWeight = 'bold';
+                div.style.fontFamily = "'Cinzel', serif"; // ヘッダーはCinzelで統一
                 div.textContent = day;
                 calendarGrid.appendChild(div);
             });
@@ -235,18 +292,17 @@
             }
 
             // 日付セル
-			const todayObj = new Date();
-			const tYear = todayObj.getFullYear();
-			const tMonth = String(todayObj.getMonth() + 1).padStart(2, '0');
-			const tDay = String(todayObj.getDate()).padStart(2, '0');
-			const todayStr = `${tYear}-${tMonth}-${tDay}`;
+            const todayObj = new Date();
+            const tYear = todayObj.getFullYear();
+            const tMonth = String(todayObj.getMonth() + 1).padStart(2, '0');
+            const tDay = String(todayObj.getDate()).padStart(2, '0');
+            const todayStr = `${tYear}-${tMonth}-${tDay}`;
 
             for (let d = 1; d <= totalDays; d++) {
                 const cell = document.createElement('div');
                 cell.className = 'calendar-day';
                 cell.textContent = d;
 
-                // 日付文字列を作成 (yyyy-MM-dd)
                 const checkDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
                 if (checkDate === todayStr) {

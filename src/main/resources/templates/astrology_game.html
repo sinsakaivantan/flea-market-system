@@ -16,7 +16,48 @@
         }
 
         * { box-sizing: border-box; user-select: none; }
+		/* --- 戻るボタン (追加) --- */
+		        .back-nav {
+		            position: fixed; /* スクロールしても左上に固定 */
+		            top: 25px;
+		            left: 25px;
+		            z-index: 50; /* カード(z-index:10)より手前に表示 */
+		        }
 
+		        .back-link {
+		            display: flex;
+		            align-items: center;
+		            gap: 8px;
+		            color: rgba(212, 175, 55, 0.5); /* プレイ中は邪魔にならないよう少し薄く */
+		            text-decoration: none;
+		            font-size: 1.1rem;
+		            letter-spacing: 0.1em;
+		            transition: all 0.3s ease;
+		            text-shadow: 0 0 5px rgba(0,0,0,0.8); /* 背景が星なので読みやすく */
+		        }
+
+		        .back-link::before {
+		            content: '«';
+		            font-size: 1.5rem;
+		            padding-bottom: 2px;
+		            transition: transform 0.3s ease;
+		        }
+
+		        .back-link:hover {
+		            color: var(--gold); /* ホバーで発光 */
+		            text-shadow: 0 0 15px var(--gold);
+		            transform: scale(1.05);
+		        }
+
+		        .back-link:hover::before {
+		            transform: translateX(-5px); /* 矢印が動くアニメーション */
+		        }
+
+		        /* スマホ調整 */
+		        @media (max-width: 600px) {
+		            .back-nav { top: 15px; left: 15px; }
+		            .back-link { font-size: 0.9rem; }
+		        }
         body {
             margin: 0;
             min-height: 100vh;
@@ -149,7 +190,9 @@
     </style>
 </head>
 <body>
-
+	<div class="back-nav">
+	        <a href="/play" class="back-link">RETURN</a>
+	    </div>
     <canvas id="starfield"></canvas>
     <div class="magic-circle"></div>
 
