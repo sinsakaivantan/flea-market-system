@@ -9,6 +9,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class FleaMarketSystemCompleteApplication {
 
     public static void main(String[] args) {
+
+
         SpringApplication.run(FleaMarketSystemCompleteApplication.class, args);
     }
+    
 }
