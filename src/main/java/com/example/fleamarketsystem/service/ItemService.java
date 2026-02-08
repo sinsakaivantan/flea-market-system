@@ -1,19 +1,24 @@
 package com.example.fleamarketsystem.service;
 
-import com.example.fleamarketsystem.entity.Item;
-import com.example.fleamarketsystem.entity.User;
-import com.example.fleamarketsystem.repository.ItemRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.example.fleamarketsystem.entity.Ban;
+import com.example.fleamarketsystem.entity.Item;
+import com.example.fleamarketsystem.entity.User;
+import com.example.fleamarketsystem.repository.BanRepository;
+import com.example.fleamarketsystem.repository.ItemRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,25 +29,62 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final CategoryService categoryService;
     private final CloudinaryService cloudinaryService;
+    private final BanRepository banRepository;
 
-    public ItemService(ItemRepository itemRepository, CategoryService categoryService, CloudinaryService cloudinaryService) {
+    public ItemService(ItemRepository itemRepository, CategoryService categoryService, CloudinaryService cloudinaryService,BanRepository banRepository) {
         this.itemRepository = itemRepository;
         this.categoryService = categoryService;
         this.cloudinaryService = cloudinaryService;
+        this.banRepository = banRepository;
     }
 
     /** 商品一覧用：BAN・無効アカウントの出品者の商品は除外 */
     public Page<Item> searchItems(String keyword, Long categoryId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    	Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         String status = "出品中";
-        if (keyword != null && !keyword.isEmpty() && categoryId != null) {
-            return itemRepository.findByNameContainingIgnoreCaseAndCategoryIdAndStatusAndSeller_BannedFalseAndSeller_EnabledTrue(keyword, categoryId, status, pageable);
-        } else if (keyword != null && !keyword.isEmpty()) {
-            return itemRepository.findByNameContainingIgnoreCaseAndStatusAndSeller_BannedFalseAndSeller_EnabledTrue(keyword, status, pageable);
-        } else if (categoryId != null) {
-            return itemRepository.findByCategoryIdAndStatusAndSeller_BannedFalseAndSeller_EnabledTrue(categoryId, status, pageable);
+        
+        // 1. 現在BAN期間中のレコードを全て取得
+        List<Ban> activeBans = banRepository.findByEndAfter(LocalDateTime.now());
+
+        // 2. BAN中のユーザーIDリストを作成
+        List<Long> bannedUserIds = activeBans.stream()
+                .map(ban -> ban.getUserId().getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 3. 検索キーワードの調整
+        boolean hasKeyword = (keyword != null && !keyword.isEmpty());
+
+        // 4. BANユーザーがいるかどうかで呼び出すメソッドを変える
+        // （※NotInに空リストを渡すとエラーになるDBがあるため分岐する）
+        
+        if (bannedUserIds.isEmpty()) {
+            // --- BANされている人が誰もいない場合（既存の検索） ---
+            if (hasKeyword && categoryId != null) {
+                return itemRepository.findByNameContainingIgnoreCaseAndCategoryIdAndStatusAndSeller_EnabledTrue(keyword, categoryId, status, pageable);
+            } else if (hasKeyword) {
+                return itemRepository.findByNameContainingIgnoreCaseAndStatusAndSeller_EnabledTrue(keyword, status, pageable);
+            } else if (categoryId != null) {
+                return itemRepository.findByCategoryIdAndStatusAndSeller_EnabledTrue(categoryId, status, pageable);
+            } else {
+                return itemRepository.findByStatusAndSeller_EnabledTrue(status, pageable);
+            }
+            
         } else {
-            return itemRepository.findByStatusAndSeller_BannedFalseAndSeller_EnabledTrue(status, pageable);
+            // --- BANされている人を除外して検索（NotInを使う） ---
+            if (hasKeyword && categoryId != null) {
+                return itemRepository.findByNameContainingIgnoreCaseAndCategoryIdAndStatusAndSeller_EnabledTrueAndSeller_IdNotIn(
+                        keyword, categoryId, status, bannedUserIds, pageable);
+            } else if (hasKeyword) {
+                return itemRepository.findByNameContainingIgnoreCaseAndStatusAndSeller_EnabledTrueAndSeller_IdNotIn(
+                        keyword, status, bannedUserIds, pageable);
+            } else if (categoryId != null) {
+                return itemRepository.findByCategoryIdAndStatusAndSeller_EnabledTrueAndSeller_IdNotIn(
+                        categoryId, status, bannedUserIds, pageable);
+            } else {
+                return itemRepository.findByStatusAndSeller_EnabledTrueAndSeller_IdNotIn(
+                        status, bannedUserIds, pageable);
+            }
         }
     }
 

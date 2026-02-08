@@ -1,5 +1,6 @@
 package com.example.fleamarketsystem.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,5 +15,6 @@ import com.example.fleamarketsystem.entity.User;
 	public interface BanRepository extends JpaRepository<Ban, Long> {
 		Optional<Ban> findTopByUserIdOrderByEndDesc(User useId);
 		List<Ban> findAllByUserId(User userId);
+		List<Ban> findByEndAfter(LocalDateTime now);
 	}
 

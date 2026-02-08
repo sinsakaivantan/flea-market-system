@@ -132,10 +132,10 @@
                             <sec:authorize access="isAuthenticated()">
                                 <th:block th:if="${item.seller.email != #authentication.name}">
                                     <form th:if="${isFavorited}" th:action="@{/items/{id}/unfavorite(id=${item.id})}" method="post" style="display:inline;">
-                                        <button type="submit" class="btn-heart btn-heart-on"><img th:src="@{/images/Heart-on.png}" class="heart-img"></button>
+                                        <button type="submit" class="btn-heart btn-heart-on"><img th:src="@{/images/heart-on.png}" class="heart-img"></button>
                                     </form>
                                     <form th:unless="${isFavorited}" th:action="@{/items/{id}/favorite(id=${item.id})}" method="post" style="display:inline;">
-                                        <button type="submit" class="btn-heart btn-heart-off"><img th:src="@{/images/Heart-off.png}" class="heart-img"></button>
+                                        <button type="submit" class="btn-heart btn-heart-off"><img th:src="@{/images/heart-off.png}" class="heart-img"></button>
                                     </form>
                                 </th:block>
                             </sec:authorize>
