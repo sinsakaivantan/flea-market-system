@@ -157,7 +157,7 @@ public class AdminUserController {
 	@PostMapping("/{id}/ban")
 	public String ban(@PathVariable Long id,
 			@RequestParam("reason") String reason,
-			@RequestParam(value = "disableLogin", defaultValue = "true") boolean disableLogin,
+			@RequestParam(value = "disableLogin", defaultValue = "false") boolean disableLogin,
 			Authentication auth) {
 		Long adminId = users.findByEmailIgnoreCase(auth.getName()).map(User::getId).orElse(null);
 		service.banUser(id, adminId, reason, disableLogin);
