@@ -1,6 +1,7 @@
 // src/main/java/com/example/fleamarketsystem/repository/UserRepository.java
 package com.example.fleamarketsystem.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +29,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	Double averageRatingForUser(@Param("userId") Long userId);
 	Optional<User> findByTrust(int trust);
 	Optional<User> findById(Long id);
+	List<User> findByBannedTrue();
 }
