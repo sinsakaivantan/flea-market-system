@@ -19,6 +19,7 @@ import com.example.fleamarketsystem.entity.Item;
 import com.example.fleamarketsystem.entity.User;
 import com.example.fleamarketsystem.repository.BanRepository;
 import com.example.fleamarketsystem.repository.ItemRepository;
+import com.example.fleamarketsystem.repository.UserRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,32 +31,40 @@ public class ItemService {
     private final CategoryService categoryService;
     private final CloudinaryService cloudinaryService;
     private final BanRepository banRepository;
+    private final UserRepository userRepository;
 
-    public ItemService(ItemRepository itemRepository, CategoryService categoryService, CloudinaryService cloudinaryService,BanRepository banRepository) {
+    public ItemService(ItemRepository itemRepository, CategoryService categoryService, CloudinaryService cloudinaryService, BanRepository banRepository, UserRepository userRepository) {
         this.itemRepository = itemRepository;
         this.categoryService = categoryService;
         this.cloudinaryService = cloudinaryService;
         this.banRepository = banRepository;
+        this.userRepository = userRepository;
     }
 
     /** 商品一覧用：BAN・無効アカウントの出品者の商品は除外 */
     public Page<Item> searchItems(String keyword, Long categoryId, int page, int size) {
-    	Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         String status = "出品中";
         
         // 1. 現在BAN期間中のレコードを全て取得
         List<Ban> activeBans = banRepository.findByEndAfter(LocalDateTime.now());
-
+        
         // 2. BAN中のユーザーIDリストを作成
         List<Long> bannedUserIds = activeBans.stream()
                 .map(ban -> ban.getUserId().getId())
                 .distinct()
                 .collect(Collectors.toList());
+        
+        // 3. 永久BANユーザーも同じリスト(bannedUserIds)に追加
+        List<User> permBannedUsers = userRepository.findByBannedTrue();
+        for (User u : permBannedUsers) {
+            bannedUserIds.add(u.getId()); 
+        }
 
-        // 3. 検索キーワードの調整
+        // 4. 検索キーワードの調整
         boolean hasKeyword = (keyword != null && !keyword.isEmpty());
 
-        // 4. BANユーザーがいるかどうかで呼び出すメソッドを変える
+        // 5. BANユーザーがいるかどうかで呼び出すメソッドを変える
         // （※NotInに空リストを渡すとエラーになるDBがあるため分岐する）
         
         if (bannedUserIds.isEmpty()) {
