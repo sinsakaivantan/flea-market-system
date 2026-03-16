@@ -49,7 +49,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/login", "/register", "/css/**", "/js/**", "/error",
-                    "/banned", "/a", "/igimousitate/**" 
+                    "/banned", "/a", "/igimousitate/**", "/suimin"
                 ).permitAll()
                 .requestMatchers("/mfa/**").authenticated()
                 .requestMatchers("/admin/**").access((authentication, context) -> {
