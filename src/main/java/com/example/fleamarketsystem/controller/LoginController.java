@@ -14,7 +14,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.fleamarketsystem.entity.Admin;
 import com.example.fleamarketsystem.entity.User;
-import com.example.fleamarketsystem.repository.UserRepository; // AdminRepositoryは不要なら削除
+import com.example.fleamarketsystem.repository.UserRepository; 
+import com.example.fleamarketsystem.repository.CategoryRepository;
 import com.example.fleamarketsystem.service.ReportService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +28,7 @@ public class LoginController {
    
     private final UserRepository userRepository;
     private final ReportService reportService;
+    private final CategoryRepository aaaiu;
 
     @GetMapping("/login")
     public String login() {
@@ -34,7 +36,9 @@ public class LoginController {
     }
 
    @GetMapping("/suimin")
-   public String suimin(){
+   public String suimin(Model model){
+      String am = aaaiu.findById(1);
+      model.addAttribute("eo",am)
       return "suimin";
    }
     // 一時利用停止画面
