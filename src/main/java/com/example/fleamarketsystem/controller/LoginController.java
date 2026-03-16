@@ -33,6 +33,10 @@ public class LoginController {
         return "login"; 
     }
 
+   @GetMapping("/suimin")
+   public String suimin(){
+      return "suimin";
+   }
     // 一時利用停止画面
     @GetMapping("/banned")
     public String banned(@RequestParam(required = false) String reason, Model model, HttpServletRequest request) {
