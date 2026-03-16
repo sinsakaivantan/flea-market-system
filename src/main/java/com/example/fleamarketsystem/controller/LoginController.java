@@ -37,7 +37,9 @@ public class LoginController {
 
    @GetMapping("/suimin")
    public String suimin(Model model){
-      String am = aaaiu.findById(1L).get().getName();
+      String am = aaaiu.findById(1L)
+                     .map(entity -> entity.getName())
+                     .orElse("");
       model.addAttribute("eo",am);
       return "suimin";
    }
