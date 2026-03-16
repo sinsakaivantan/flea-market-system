@@ -38,7 +38,7 @@ public class LoginController {
    @GetMapping("/suimin")
    public String suimin(Model model){
       String am = aaaiu.findById(1);
-      model.addAttribute("eo",am)
+      model.addAttribute("eo",am);
       return "suimin";
    }
     // 一時利用停止画面
